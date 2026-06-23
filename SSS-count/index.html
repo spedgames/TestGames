@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Count with Noodle!</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* =============================================
+     RESET & BASE
+     ============================================= */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sky-top:    #5BC8F5;
+    --sky-bot:    #3AAEDC;
+    --cream:      #FFFDF7;
+    --yellow-hi:  rgba(255, 222, 60, 0.52);
+    --yellow-brd: rgba(240, 190, 0, 0.55);
+    --accent:     #FF8C42;
+    --accent-dk:  #D96A1A;
+    --purple:     #7C5CBF;
+    --purple-dk:  #5A3E9A;
+    --green:      #4CAF82;
+    --green-dk:   #2E8A5F;
+    --white:      #FFFFFF;
+    --dark:       #1E2D3D;
+    --mid:        #4A5D72;
+    --light-card: rgba(255,255,255,0.92);
+    --shadow-sm:  0 2px 8px rgba(0,0,0,0.10);
+    --shadow-md:  0 6px 24px rgba(0,0,0,0.12);
+    --shadow-lg:  0 12px 40px rgba(0,0,0,0.16);
+    --radius-lg:  22px;
+    --radius-xl:  32px;
+    --font:       'Poppins', sans-serif;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: linear-gradient(170deg, var(--sky-top) 0%, var(--sky-bot) 100%);
+    font-family: var(--font);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* =============================================
+     SUBTLE BACKGROUND SHAPES
+     ============================================= */
+  .bg-blob {
+    position: fixed;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    pointer-events: none;
+  }
+  .bg-blob.b1 { width: 260px; height: 200px; top: -60px; left: -80px; border-radius: 50%; }
+  .bg-blob.b2 { width: 180px; height: 180px; top: 10px;  right: -50px; }
+  .bg-blob.b3 { width: 140px; height: 140px; bottom: 60px; left: -40px; }
+
+  /* =============================================
+     SCREENS
+     ============================================= */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.35s ease;
+    padding: 16px;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* =============================================
+     START SCREEN
+     ============================================= */
+  #startScreen { gap: 16px; }
+
+  .logo-title {
+    font-size: clamp(1.9rem, 6.5vw, 3rem);
+    font-weight: 900;
+    color: var(--white);
+    text-shadow: 0 3px 0 rgba(0,0,0,0.15), 0 6px 20px rgba(0,0,0,0.12);
+    letter-spacing: -0.5px;
+    text-align: center;
+    line-height: 1.15;
+  }
+  .logo-sub {
+    font-size: clamp(0.85rem, 2.8vw, 1.1rem);
+    font-weight: 600;
+    color: rgba(255,255,255,0.88);
+    text-align: center;
+    letter-spacing: 0.3px;
+    margin-top: -6px;
+  }
+
+  .noodle-preview {
+    width: clamp(90px, 18vw, 130px);
+    height: clamp(90px, 18vw, 130px);
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.18));
+    animation: bobFloat 3s ease-in-out infinite;
+  }
+  @keyframes bobFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-9px); }
+  }
+
+  .start-card {
+    background: var(--light-card);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-xl);
+    padding: 20px 26px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+  }
+  .start-card h2 {
+    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: -0.2px;
+  }
+  .instructions {
+    font-size: clamp(0.82rem, 2.4vw, 0.95rem);
+    color: var(--mid);
+    line-height: 1.7;
+    font-weight: 500;
+    text-align: center;
+  }
+  .instructions strong { color: var(--purple); font-weight: 700; }
+
+  /* Settings block on start screen */
+  .settings-block {
+    background: var(--light-card);
+    backdrop-filter: blur(8px);
+    border-radius: var(--radius-xl);
+    padding: 18px 24px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .setting-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .setting-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .setting-label {
+    font-size: clamp(0.8rem, 2.4vw, 0.9rem);
+    font-weight: 700;
+    color: var(--dark);
+  }
+  .setting-value {
+    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+    font-weight: 800;
+    color: var(--purple);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* Custom range slider */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+    /* Track fill handled via JS background */
+    background: linear-gradient(to right,
+      var(--purple) 0%,
+      var(--purple) var(--fill, 50%),
+      rgba(124,92,191,0.15) var(--fill, 50%),
+      rgba(124,92,191,0.15) 100%
+    );
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 3px solid var(--purple);
+    box-shadow: 0 2px 8px rgba(124,92,191,0.30);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 3px solid var(--purple);
+    box-shadow: 0 2px 8px rgba(124,92,191,0.30);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.18);
+    box-shadow: 0 3px 12px rgba(124,92,191,0.40);
+  }
+  input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.18);
+    box-shadow: 0 3px 12px rgba(124,92,191,0.40);
+  }
+
+  .btn-start {
+    background: var(--accent);
+    color: var(--white);
+    font-family: var(--font);
+    font-size: clamp(1rem, 3.2vw, 1.25rem);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 52px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--accent-dk), var(--shadow-md);
+    transition: transform 0.12s, box-shadow 0.12s;
+    min-height: 54px;
+  }
+  .btn-start:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--accent-dk), 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  /* =============================================
+     GAME SCREEN
+     ============================================= */
+  #gameScreen {
+    gap: 10px;
+    justify-content: flex-start;
+    padding-top: 12px;
+  }
+
+  /* Progress bar */
+  .progress-row {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    width: 100%;
+    max-width: 560px;
+  }
+  .progress-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.30);
+    border: 2px solid rgba(255,255,255,0.55);
+    transition: background 0.3s, border-color 0.3s, transform 0.3s;
+    flex-shrink: 0;
+  }
+  .progress-dot.done {
+    background: #FFD93D;
+    border-color: rgba(220,160,0,0.6);
+    transform: scale(1.18);
+  }
+  .progress-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    margin-left: 4px;
+    letter-spacing: 0.1px;
+  }
+
+  /* Character + game area row */
+  .game-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    width: 100%;
+    max-width: 560px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Character column */
+  .char-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: clamp(72px, 18vw, 112px);
+    padding-bottom: 6px;
+  }
+
+  /* Thought bubble */
+  .thought-bubble {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 7px 10px;
+    font-size: clamp(0.65rem, 2vw, 0.82rem);
+    font-weight: 600;
+    color: var(--dark);
+    text-align: center;
+    line-height: 1.35;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    margin-bottom: 8px;
+    min-width: 88px;
+    max-width: 116px;
+  }
+  /* Tail pointing down-right toward character */
+  .thought-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 14px solid var(--white);
+  }
+  .thought-bubble .food-name {
+    color: var(--purple);
+    font-weight: 700;
+    display: block;
+    margin-top: 2px;
+    font-size: 1.05em;
+  }
+
+  .noodle-char {
+    width: clamp(66px, 17vw, 106px);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
+    margin-top: 2px;
+  }
+
+  /* Counting box */
+  .count-box {
+    flex: 1;
+    min-width: 0;
+    background: var(--cream);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.9);
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 0.82;
+    max-height: 54vh;
+    min-height: 160px;
+    border: 1.5px solid rgba(255,255,255,0.7);
+  }
+
+  /* Food items inside box */
+  .food-item {
+    position: absolute;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    /* No transform transition — keep it still */
+  }
+  .food-item .food-emoji {
+    font-size: inherit;
+    line-height: 1;
+    pointer-events: none;
+    position: relative; z-index: 1;
+    display: block;
+  }
+
+  /* Yellow highlight circle — hidden until tapped */
+  .food-item .tap-glow {
+    position: absolute;
+    /* Slightly larger than the emoji area */
+    inset: -8px;
+    border-radius: 50%;
+    background: var(--yellow-hi);
+    border: 2.5px solid var(--yellow-brd);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .food-item.tapped .tap-glow {
+    opacity: 1;
+  }
+  /* Disable pointer events once tapped */
+  .food-item.tapped {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* Number answer buttons */
+  .number-row {
+    display: flex;
+    gap: 9px;
+    justify-content: center;
+    width: 100%;
+    max-width: 560px;
+    padding: 2px 0 6px;
+    min-height: 58px;
+  }
+  .num-btn {
+    flex: 1;
+    max-width: 84px;
+    min-height: 54px;
+    background: var(--white);
+    color: var(--purple);
+    font-family: var(--font);
+    font-size: clamp(1.3rem, 4vw, 1.75rem);
+    font-weight: 800;
+    border: 2px solid rgba(124, 92, 191, 0.18);
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(124,92,191,0.22), var(--shadow-sm);
+    transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    /* Hidden state */
+    opacity: 0;
+    pointer-events: none;
+  }
+  .num-btn.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s ease;
+  }
+  .num-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(124,92,191,0.22), 0 2px 6px rgba(0,0,0,0.08);
+  }
+  /* Correct — briefly turns green */
+  .num-btn.correct {
+    background: var(--green);
+    color: var(--white);
+    border-color: transparent;
+    box-shadow: 0 3px 0 var(--green-dk), var(--shadow-sm);
+  }
+  /* Wrong — just a subtle shake, no color change */
+  @keyframes gentleShake {
+    0%, 100% { transform: translateX(0); }
+    25%       { transform: translateX(-5px); }
+    75%       { transform: translateX(5px); }
+  }
+  .num-btn.wrong {
+    animation: gentleShake 0.32s ease;
+  }
+
+  /* =============================================
+     WIN SCREEN
+     ============================================= */
+  #winScreen { gap: 18px; }
+
+  .win-title {
+    font-size: clamp(1.9rem, 6.5vw, 3rem);
+    font-weight: 900;
+    color: var(--white);
+    text-shadow: 0 3px 0 rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.12);
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+  }
+  .win-stars {
+    font-size: clamp(2rem, 7vw, 3rem);
+    letter-spacing: 6px;
+  }
+  .win-noodle {
+    width: clamp(100px, 22vw, 150px);
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+    animation: winPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes winPop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+  .win-card {
+    background: var(--light-card);
+    border-radius: var(--radius-xl);
+    padding: 18px 28px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+  }
+  .win-msg {
+    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+    font-weight: 600;
+    color: var(--dark);
+    line-height: 1.55;
+  }
+  .btn-play-again {
+    background: var(--green);
+    color: var(--white);
+    font-family: var(--font);
+    font-size: clamp(1rem, 3.2vw, 1.25rem);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 46px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--green-dk), var(--shadow-md);
+    transition: transform 0.12s, box-shadow 0.12s;
+    min-height: 54px;
+  }
+  .btn-play-again:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--green-dk), 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    opacity: 0;
+    pointer-events: none;
+    animation: confettiFall linear forwards;
+    z-index: 100;
+    border-radius: 2px;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(-20px) rotate(0deg);    opacity: 0.9; }
+    100% { transform: translateY(105vh) rotate(540deg);  opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Subtle background blobs -->
+<div class="bg-blob b1"></div>
+<div class="bg-blob b2"></div>
+<div class="bg-blob b3"></div>
+
+<!-- ==============================
+     START SCREEN
+     ============================== -->
+<div id="startScreen" class="screen">
+  <div class="logo-title">Count with Noodle! 🎵</div>
+  <div class="logo-sub">A Super Simple Songs Adventure</div>
+
+  <img src="assets/Noodle.png" alt="Noodle" class="noodle-preview"
+       onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:5rem;line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.2))\'>🐛</div>')">
+
+  <div class="start-card">
+    <h2>How to Play</h2>
+    <p class="instructions">
+      👆 <strong>Tap each food item</strong> to count it.<br>
+      🔢 Then tap the <strong>correct number</strong> to win!
+    </p>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-block">
+
+    <!-- Rounds -->
+    <div class="setting-row">
+      <div class="setting-header">
+        <span class="setting-label">🎮 Rounds</span>
+        <span class="setting-value" id="roundsVal">5</span>
+      </div>
+      <input type="range" id="settingRounds" min="3" max="10" value="5"
+             oninput="updateSlider(this, 'roundsVal', 3, 10)">
+    </div>
+
+    <!-- Max quantity -->
+    <div class="setting-row">
+      <div class="setting-header">
+        <span class="setting-label">🔢 Count up to</span>
+        <span class="setting-value" id="qtyVal">5</span>
+      </div>
+      <input type="range" id="settingQty" min="1" max="5" value="5"
+             oninput="updateSlider(this, 'qtyVal', 1, 5)">
+    </div>
+
+  </div>
+
+  <button class="btn-start" onclick="startGame()">Let's Count! 🎉</button>
+</div>
+
+<!-- ==============================
+     GAME SCREEN
+     ============================== -->
+<div id="gameScreen" class="screen hidden">
+
+  <!-- Progress dots -->
+  <div class="progress-row" id="progressRow">
+    <!-- Built by JS -->
+  </div>
+
+  <!-- Character + count box -->
+  <div class="game-row">
+
+    <div class="char-col">
+      <div class="thought-bubble" id="thoughtBubble">
+        Count all the
+        <span class="food-name" id="foodName"></span>
+      </div>
+      <img src="assets/Noodle.png" alt="Noodle" class="noodle-char"
+           onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:3.5rem;line-height:1;margin-top:4px\'>🐛</div>')">
+    </div>
+
+    <div class="count-box" id="countBox"></div>
+  </div>
+
+  <!-- Number answer buttons -->
+  <div class="number-row" id="numberRow"></div>
+</div>
+
+<!-- ==============================
+     WIN SCREEN
+     ============================== -->
+<div id="winScreen" class="screen hidden">
+  <div class="win-title">Amazing Job! 🎉</div>
+  <div class="win-stars">⭐⭐⭐⭐⭐</div>
+  <img src="assets/Noodle.png" alt="Noodle" class="win-noodle"
+       onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:5rem;line-height:1\'>🐛</div>')">
+  <div class="win-card">
+    <p class="win-msg" id="winMsg">You counted all 5 rounds!<br>Noodle is SO proud of you! 🌈</p>
+  </div>
+  <button class="btn-play-again" onclick="startGame()">Play Again! 🎵</button>
+</div>
+
+<script>
+/* ================================================
+   GAME DATA — food items with emoji
+   ================================================ */
+const FOODS = [
+  { name: 'apples',       emoji: '🍎' },
+  { name: 'bananas',      emoji: '🍌' },
+  { name: 'strawberries', emoji: '🍓' },
+  { name: 'oranges',      emoji: '🍊' },
+  { name: 'grapes',       emoji: '🍇' },
+  { name: 'lemons',       emoji: '🍋' },
+  { name: 'watermelons',  emoji: '🍉' },
+  { name: 'cherries',     emoji: '🍒' },
+  { name: 'pineapples',   emoji: '🍍' },
+  { name: 'peaches',      emoji: '🍑' },
+  { name: 'cupcakes',     emoji: '🧁' },
+  { name: 'pizzas',       emoji: '🍕' },
+  { name: 'tacos',        emoji: '🌮' },
+];
+
+// These are set from the start screen settings before each game
+let TOTAL_ROUNDS  = 5;   // 3–10, chosen by player
+let MAX_QUANTITY  = 5;   // 1–5, chosen by player
+
+/* ================================================
+   AUDIO — Web Audio API for sound effects
+   ================================================ */
+let audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+/* Short pleasant tap tone when counting an item */
+function playTap() {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(700, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.14);
+  } catch(e) {}
+}
+
+/* Pleasant C–E–G chime for correct answer */
+function playCorrect() {
+  try {
+    const ctx = getCtx();
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.11;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+      osc.start(t);
+      osc.stop(t + 0.34);
+    });
+  } catch(e) {}
+}
+
+/* Win tune: SSS.mp3, with Web Audio fanfare fallback */
+let winAudio = null;
+function playWinTune() {
+  try {
+    if (!winAudio) {
+      winAudio = new Audio('assets/SSS.mp3');
+      winAudio.volume = 0.85;
+    }
+    winAudio.currentTime = 0;
+    winAudio.play().catch(() => playFanfare());
+  } catch(e) { playFanfare(); }
+}
+
+function playFanfare() {
+  try {
+    const ctx = getCtx();
+    const notes = [
+      { f: 523.25, t: 0,    d: 0.18 },
+      { f: 659.25, t: 0.14, d: 0.18 },
+      { f: 783.99, t: 0.28, d: 0.18 },
+      { f: 1046.5, t: 0.42, d: 0.42 },
+      { f: 783.99, t: 0.60, d: 0.14 },
+      { f: 1046.5, t: 0.72, d: 0.60 },
+    ];
+    notes.forEach(({ f, t, d }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.value = f;
+      const start = ctx.currentTime + t;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.28, start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + d);
+      osc.start(start);
+      osc.stop(start + d + 0.05);
+    });
+  } catch(e) {}
+}
+
+/* ================================================
+   GAME STATE
+   ================================================ */
+let currentRound    = 0;
+let correctCount    = 0;   // how many items this round
+let tappedCount     = 0;   // how many the player has tapped
+let answering       = false;  // true once number buttons are visible
+let isTransitioning = false;  // locked during round change
+
+/* ================================================
+   LAYOUT — random non-overlapping positions
+   ================================================ */
+/**
+ * Place n circles of radius itemRadius inside a box of boxW × boxH,
+ * with at least minGap pixels between each circle edge.
+ * Returns array of { x, y } centre points.
+ */
+function layoutItems(n, boxW, boxH, itemRadius, minGap) {
+  const pad     = itemRadius + 12;
+  const minDist = (itemRadius * 2) + minGap;
+  const placed  = [];
+  let attempts  = 0;
+
+  while (placed.length < n && attempts < 3000) {
+    attempts++;
+    const x = pad + Math.random() * (boxW - pad * 2);
+    const y = pad + Math.random() * (boxH - pad * 2);
+    let ok = true;
+    for (const p of placed) {
+      const dx = p.x - x, dy = p.y - y;
+      if (Math.sqrt(dx * dx + dy * dy) < minDist) { ok = false; break; }
+    }
+    if (ok) placed.push({ x, y });
+  }
+  return placed;
+}
+
+/* ================================================
+   SCREEN MANAGEMENT
+   ================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+/* ================================================
+   GAME FLOW
+   ================================================ */
+/* Update slider fill and displayed value */
+function updateSlider(input, labelId, min, max) {
+  const val  = parseInt(input.value);
+  const pct  = ((val - min) / (max - min)) * 100;
+  input.style.setProperty('--fill', pct + '%');
+  document.getElementById(labelId).textContent = val;
+}
+
+/* Initialise slider fills on page load */
+function initSliders() {
+  const rounds = document.getElementById('settingRounds');
+  const qty    = document.getElementById('settingQty');
+  updateSlider(rounds, 'roundsVal', 3, 10);
+  updateSlider(qty,    'qtyVal',    1, 5);
+}
+
+function startGame() {
+  // Read player's chosen settings
+  TOTAL_ROUNDS = parseInt(document.getElementById('settingRounds').value);
+  MAX_QUANTITY = parseInt(document.getElementById('settingQty').value);
+
+  currentRound    = 0;
+  isTransitioning = false;
+  showScreen('gameScreen');
+  buildProgressDots();
+  nextRound();
+}
+
+/* Build the five progress indicator dots */
+function buildProgressDots() {
+  const row = document.getElementById('progressRow');
+  row.innerHTML = '';
+  for (let i = 0; i < TOTAL_ROUNDS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.id = 'dot' + i;
+    row.appendChild(dot);
+  }
+  const lbl = document.createElement('span');
+  lbl.className = 'progress-label';
+  lbl.id = 'progressLabel';
+  row.appendChild(lbl);
+}
+
+/* Refresh dot colours and the round label */
+function updateProgress() {
+  for (let i = 0; i < TOTAL_ROUNDS; i++) {
+    const dot = document.getElementById('dot' + i);
+    if (dot) dot.classList.toggle('done', i < currentRound);
+  }
+  const lbl = document.getElementById('progressLabel');
+  if (lbl) lbl.textContent = `Round ${Math.min(currentRound + 1, TOTAL_ROUNDS)} of ${TOTAL_ROUNDS}`;
+
+}
+
+/* Set up one new round */
+function nextRound() {
+  if (isTransitioning) return;
+  if (currentRound >= TOTAL_ROUNDS) { endGame(); return; }
+
+  tappedCount = 0;
+  answering   = false;
+  updateProgress();
+
+  // Pick a random food and a quantity 1–MAX_QUANTITY
+  const food   = FOODS[Math.floor(Math.random() * FOODS.length)];
+  correctCount = 1 + Math.floor(Math.random() * MAX_QUANTITY);
+
+  // Update Noodle's thought bubble
+  document.getElementById('foodName').textContent = food.emoji + ' ' + food.name;
+
+  // Populate the counting box and prepare number buttons
+  buildCountBox(food, correctCount);
+  buildNumberButtons(correctCount);
+}
+
+/* Create and place food emoji items inside the count box */
+function buildCountBox(food, n) {
+  const box = document.getElementById('countBox');
+  box.innerHTML = '';
+
+  // Wait one animation frame so the box has its rendered dimensions
+  requestAnimationFrame(() => {
+    const w = box.clientWidth;
+    const h = box.clientHeight;
+
+    // Size each item relative to the box and quantity
+    const baseSize = Math.min(w, h) / (n <= 2 ? 3.0 : n <= 3 ? 3.6 : 4.4);
+    const itemSize = Math.max(50, Math.min(baseSize, 86));   // clamp 50–86 px
+    const itemRadius = itemSize / 2;
+
+    const positions = layoutItems(n, w, h, itemRadius, 16);
+
+    positions.forEach(pos => {
+      const item = document.createElement('div');
+      item.className = 'food-item';
+      item.style.cssText = `
+        width:     ${itemSize}px;
+        height:    ${itemSize}px;
+        font-size: ${itemSize * 0.72}px;
+        left:      ${pos.x - itemRadius}px;
+        top:       ${pos.y - itemRadius}px;
+      `;
+
+      // Yellow glow circle (shown on tap)
+      const glow = document.createElement('div');
+      glow.className = 'tap-glow';
+
+      // Emoji
+      const emoji = document.createElement('div');
+      emoji.className = 'food-emoji';
+      emoji.textContent = food.emoji;
+
+      item.appendChild(glow);   // behind emoji
+      item.appendChild(emoji);
+
+      item.addEventListener('pointerdown', () => tapItem(item));
+      box.appendChild(item);
+    });
+  });
+}
+
+/* Player taps a food item */
+function tapItem(item) {
+  if (item.classList.contains('tapped') || answering) return;
+
+  playTap();
+  item.classList.add('tapped');   // reveals yellow glow via CSS transition
+  tappedCount++;
+
+  // Once all items are tapped, reveal the number buttons
+  if (tappedCount >= correctCount) {
+    showNumberButtons();
+  }
+}
+
+/* Build hidden number buttons 1–MAX_QUANTITY */
+function buildNumberButtons(answer) {
+  const row = document.getElementById('numberRow');
+  row.innerHTML = '';
+
+  for (let i = 1; i <= MAX_QUANTITY; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn';
+    btn.textContent = i;
+    btn.dataset.val = i;
+    btn.addEventListener('pointerdown', () => checkAnswer(btn, i, answer));
+    row.appendChild(btn);
+  }
+}
+
+/* Make all five number buttons appear simultaneously */
+function showNumberButtons() {
+  answering = true;
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.classList.add('visible');
+  });
+}
+
+/* Player taps a number button */
+function checkAnswer(btn, chosen, correct) {
+  if (!answering) return;
+
+  if (chosen === correct) {
+    // ✅ Correct
+    answering = false;
+    playCorrect();
+
+    // Brief green highlight on the correct button
+    btn.classList.add('correct');
+
+    currentRound++;
+    updateProgress();
+
+    isTransitioning = true;
+    setTimeout(() => {
+      isTransitioning = false;
+      if (currentRound >= TOTAL_ROUNDS) {
+        endGame();
+      } else {
+        nextRound();
+      }
+    }, 850);
+
+  } else {
+    // ❌ Wrong — gentle shake only, no colour change, no sound
+    btn.classList.remove('wrong');
+    void btn.offsetWidth;          // force reflow to restart animation
+    btn.classList.add('wrong');
+    btn.addEventListener('animationend', () => btn.classList.remove('wrong'), { once: true });
+  }
+}
+
+/* All rounds done */
+function endGame() {
+  const msg = document.getElementById('winMsg');
+  if (msg) msg.innerHTML = `You counted all ${TOTAL_ROUNDS} rounds!<br>Noodle is SO proud of you! 🌈`;
+  playWinTune();
+  spawnConfetti();
+  showScreen('winScreen');
+}
+
+/* ================================================
+   CONFETTI — gentle, not overwhelming
+   ================================================ */
+function spawnConfetti() {
+  const colors = ['#FFD93D','#FF8C42','#6BCB77','#4EC9F0','#9B5DE5','#FF9EC4','#FFFFFF'];
+  for (let i = 0; i < 55; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      const size = 7 + Math.random() * 7;
+      el.style.cssText = `
+        left: ${Math.random() * 100}vw;
+        top: -16px;
+        width: ${size}px;
+        height: ${size * (1.2 + Math.random())}px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+        animation-duration: ${2 + Math.random() * 2}s;
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 4200);
+    }, i * 40);
+  }
+}
+
+/* ================================================
+   KEYBOARD SUPPORT  (1–5 to answer; Enter to start)
+   ================================================ */
+document.addEventListener('keydown', e => {
+  const n = parseInt(e.key);
+  if (n >= 1 && n <= 5 && answering) {
+    const btn = document.querySelector(`.num-btn[data-val="${n}"]`);
+    if (btn) checkAnswer(btn, n, correctCount);
+  }
+  if (e.key === 'Enter') {
+    const ss = document.getElementById('startScreen');
+    if (!ss.classList.contains('hidden')) startGame();
+  }
+});
+
+/* Unlock AudioContext on first interaction */
+document.addEventListener('pointerdown', () => { if (!audioCtx) getCtx(); }, { once: true });
+
+/* Initialise slider track fills once DOM is ready */
+document.addEventListener('DOMContentLoaded', initSliders);
+</script>
+</body>
+</html>
