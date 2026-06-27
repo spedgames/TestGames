@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Schedule Timer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent: #4a90e2;
+            --accent-hover: #357abd;
+            --danger: #e53e3e;
+            --border-radius: 16px;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 15px;
+        }
+
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        .settings-btn:hover {
+            background: #edf2f7;
+            transform: rotate(45deg);
+        }
+
+        .settings-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-muted);
+        }
+
+        /* Clocks Container */
+        .clocks-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            min-height: 200px;
+            transition: var(--transition);
+        }
+
+        #analogueClock {
+            display: none;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Fixed Width and Tabular Numbers stops layout text jumping */
+        #digitalClock {
+            display: none;
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text-main);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Time Picker Inputs Wrapper */
+        .target-container {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .target-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .target-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .time-picker {
+            flex-grow: 1;
+            padding: 10px 15px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            border: 2px solid #cbd5e0;
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            transition: var(--transition);
+            min-height: 44px;
+        }
+
+        .time-picker:focus {
+            border-color: var(--accent);
+        }
+
+        .clear-btn {
+            background: #edf2f7;
+            color: var(--text-main);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            min-height: 44px;
+        }
+
+        .clear-btn:hover {
+            background: #e2e8f0;
+        }
+
+        /* Modals Structure */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            padding: 20px;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .radio-options, .toggle-options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .option-item:hover {
+            background: #f7fafc;
+        }
+
+        .option-item input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .close-settings-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            min-height: 44px;
+        }
+
+        .close-settings-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Non-Blocking Viewport Alarm System Layout */
+        .alarm-modal {
+            background: transparent;
+            pointer-events: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        
+        .alarm-modal.active {
+            pointer-events: auto;
+        }
+
+        .alarm-content {
+            background: #fff;
+            border-left: 6px solid var(--accent);
+            max-width: 450px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .arasaac-icon {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+        }
+
+        .alarm-message {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .alarm-time-highlight {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .dismiss-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            min-height: 44px;
+        }
+
+        .dismiss-btn:hover {
+            background: #c53030;
+        }
+
+        @media (max-width: 480px) {
+            #digitalClock {
+                font-size: 2.5rem;
+            }
+            .app-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="app-header">
+            <h1 class="app-title">Visual Schedule Timer</h1>
+            <button class="settings-btn" id="openSettings" aria-label="Open Settings">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="clocks-display">
+            <canvas id="analogueClock" width="220" height="220"></canvas>
+            <div id="digitalClock">00:00:00</div>
+        </div>
+
+        <div class="target-container">
+            <span class="target-label">Stop At:</span>
+            <div class="target-controls">
+                <input type="time" id="targetTime" class="time-picker">
+                <button id="clearTarget" class="clear-btn">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings System View Context -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2 class="settings-title">Settings</h2>
+            
+            <div class="setting-group">
+                <span class="setting-label">Clock Selection</span>
+                <div class="radio-options">
+                    <label class="option-item">
+                        <input type="radio" name="clockDisplay" value="digital" checked>
+                        <span>Digital Clock Only</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="clockDisplay" value="analogue">
+                        <span>Analogue Clock Only</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="clockDisplay" value="both">
+                        <span>Show Both Clocks</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <span class="setting-label">Time Format</span>
+                <div class="radio-options">
+                    <label class="option-item">
+                        <input type="radio" name="timeFormat" value="12" checked>
+                        <span>12-Hour (AM/PM)</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="timeFormat" value="24">
+                        <span>24-Hour</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <span class="setting-label">Preferences</span>
+                <div class="toggle-options">
+                    <label class="option-item">
+                        <input type="checkbox" id="showSecondsToggle" checked>
+                        <span>Show Seconds Trackers</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span>Sound ON / OFF</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="close-settings-btn" id="closeSettings">Done</button>
+        </div>
+    </div>
+
+    <!-- Alarm Popup Panel Window Modal -->
+    <div class="modal alarm-modal" id="alarmModal">
+        <div class="modal-content alarm-content">
+            <img class="arasaac-icon" src="https://api.arasaac.org/api/pictograms/8680" alt="Schedule Icon">
+            <div class="alarm-message">
+                The time is <span id="triggeredTimeDisplay" class="alarm-time-highlight">______</span>.<br>Keep items and check schedule.
+            </div>
+            <button class="dismiss-btn" id="dismissAlarm">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        const digitalClockEl = document.getElementById('digitalClock');
+        const analogueClockCanvas = document.getElementById('analogueClock');
+        const targetTimeInput = document.getElementById('targetTime');
+        const clearTargetBtn = document.getElementById('clearTarget');
+        const openSettingsBtn = document.getElementById('openSettings');
+        const closeSettingsBtn = document.getElementById('closeSettings');
+        const settingsModal = document.getElementById('settingsModal');
+        const alarmModal = document.getElementById('alarmModal');
+        const dismissAlarmBtn = document.getElementById('dismissAlarm');
+        const triggeredTimeDisplay = document.getElementById('triggeredTimeDisplay');
+        const soundToggle = document.getElementById('soundToggle');
+        const showSecondsToggle = document.getElementById('showSecondsToggle');
+        const clockDisplayRadios = document.getElementsByName('clockDisplay');
+        const timeFormatRadios = document.getElementsByName('timeFormat');
+
+        const ctx = analogueClockCanvas.getContext('2d');
+        const radius = analogueClockCanvas.width / 2;
+        ctx.translate(radius, radius);
+        const clockRadius = radius * 0.85; // Extra padding for outer text labels
+
+        let audioCtx = null;
+        let alarmIntervalId = null;
+        let alarmTriggered = false;
+
+        openSettingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
+        closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
+        dismissAlarmBtn.addEventListener('click', stopAlarm);
+        clearTargetBtn.addEventListener('click', () => targetTimeInput.value = '');
+        
+        clockDisplayRadios.forEach(r => r.addEventListener('change', updateClockVisibility));
+        showSecondsToggle.addEventListener('change', runClock);
+        timeFormatRadios.forEach(r => r.addEventListener('change', runClock));
+
+        function updateClockVisibility() {
+            const view = document.querySelector('input[name="clockDisplay"]:checked').value;
+            digitalClockEl.style.display = (view === 'digital' || view === 'both') ? 'block' : 'none';
+            analogueClockCanvas.style.display = (view === 'analogue' || view === 'both') ? 'block' : 'none';
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playGentleChime() {
+            if (!soundToggle.checked) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(659.25, now); 
+            gain1.gain.setValueAtTime(0, now);
+            gain1.gain.linearRampToValueAtTime(0.2, now + 0.05);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.8);
+
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880.00, now + 0.15);
+            gain2.gain.setValueAtTime(0, now + 0.15);
+            gain2.gain.linearRampToValueAtTime(0.2, now + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(now + 0.15);
+            osc2.stop(now + 1.0);
+        }
+
+        function runClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            const is24Hour = document.querySelector('input[name="timeFormat"]:checked').value === '24';
+            const showSeconds = showSecondsToggle.checked;
+
+            // Formatter calculations for Digital View layout
+            let displayHours = hours;
+            let ampm = '';
+            
+            if (!is24Hour) {
+                ampm = hours >= 12 ? ' PM' : ' AM';
+                displayHours = hours % 12;
+                displayHours = displayHours ? displayHours : 12; // Handle '0' as 12
+            }
+
+            const hStr = String(displayHours).padStart(2, '0');
+            const mStr = String(minutes).padStart(2, '0');
+            const sStr = String(seconds).padStart(2, '0');
+
+            digitalClockEl.textContent = `${hStr}:${mStr}${showSeconds ? ':' + sStr : ''}${ampm}`;
+
+            drawAnalogue(hours, minutes, seconds, showSeconds);
+
+            // Checking Stop Target matches
+            if (targetTimeInput.value) {
+                const [targetH, targetM] = targetTimeInput.value.split(':').map(Number);
+                if (hours === targetH && minutes === targetM && !alarmTriggered) {
+                    let alertTimeStr = `${String(targetH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}`;
+                    if (!is24Hour) {
+                        const alarmAmPm = targetH >= 12 ? ' PM' : ' AM';
+                        let alarmH = targetH % 12;
+                        alarmH = alarmH ? alarmH : 12;
+                        alertTimeStr = `${String(alarmH).padStart(2, '0')}:${String(targetM).padStart(2, '0')}${alarmAmPm}`;
+                    }
+                    triggerAlarm(alertTimeStr);
+                }
+                if ((hours !== targetH || minutes !== targetM) && alarmTriggered) {
+                    alarmTriggered = false;
+                }
+            }
+        }
+
+        function triggerAlarm(timeString) {
+            alarmTriggered = true;
+            triggeredTimeDisplay.textContent = timeString;
+            alarmModal.classList.add('active');
+            playGentleChime();
+            alarmIntervalId = setInterval(playGentleChime, 2500);
+        }
+
+        function stopAlarm() {
+            alarmModal.classList.remove('active');
+            if (alarmIntervalId) {
+                clearInterval(alarmIntervalId);
+                alarmIntervalId = null;
+            }
+        }
+
+        function drawAnalogue(hours, minutes, seconds, showSeconds) {
+            ctx.clearRect(-radius, -radius, analogueClockCanvas.width, analogueClockCanvas.height);
+            
+            // Draw Main Outer Clock Rim Face Ring
+            ctx.beginPath();
+            ctx.arc(0, 0, clockRadius, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Draw Face Value Numbers (1-12)
+            ctx.font = "bold 15px Poppins";
+            ctx.textBaseline = "middle";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#2d3748";
+            
+            for (let num = 1; num <= 12; num++) {
+                let angle = num * Math.PI / 6;
+                ctx.rotate(angle);
+                ctx.translate(0, -clockRadius * 0.8);
+                ctx.rotate(-angle);
+                ctx.fillText(num.toString(), 0, 0);
+                ctx.rotate(angle);
+                ctx.translate(0, clockRadius * 0.8);
+                ctx.rotate(-angle);
+            }
+
+            // Draw center point base peg pin
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = '#2d3748';
+            ctx.fill();
+
+            // Hands Geometry Computations
+            const hourAngle = ((hours % 12) * Math.PI / 6) + (minutes * Math.PI / (6 * 60)) + (seconds * Math.PI / (360 * 60));
+            drawHand(hourAngle, clockRadius * 0.5, 5, '#2d3748');
+
+            const minuteAngle = (minutes * Math.PI / 30) + (seconds * Math.PI / (30 * 60));
+            drawHand(minuteAngle, clockRadius * 0.72, 3.5, '#4a90e2');
+
+            if (showSeconds) {
+                const secondAngle = (seconds * Math.PI / 30);
+                drawHand(secondAngle, clockRadius * 0.82, 1.5, '#e53e3e');
+            }
+        }
+
+        function drawHand(angle, length, width, color) {
+            ctx.beginPath();
+            ctx.lineWidth = width;
+            ctx.linecap = "round";
+            ctx.strokeStyle = color;
+            ctx.moveTo(0, 0);
+            ctx.rotate(angle);
+            ctx.lineTo(0, -length);
+            ctx.stroke();
+            ctx.rotate(-angle);
+        }
+
+        updateClockVisibility();
+        setInterval(runClock, 1000);
+        runClock();
+    </script>
+</body>
+</html>
