@@ -68,7 +68,11 @@
     transition: opacity 0.35s ease;
     padding: 16px;
   }
-  .screen.hidden { opacity: 0; pointer-events: none; }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
 
   /* Game screen overrides: top-aligned, no padding (handled per-child) */
   #gameScreen {
@@ -768,6 +772,8 @@ function showScreen(id) {
   if (id === 'startScreen') {
     isTransitioning = false;
     answering = false;
+    // Remove any lingering confetti that could block taps
+    document.querySelectorAll('.confetti-piece').forEach(el => el.remove());
   }
 }
 
