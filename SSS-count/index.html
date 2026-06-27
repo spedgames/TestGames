@@ -70,6 +70,17 @@
   }
   .screen.hidden { opacity: 0; pointer-events: none; }
 
+  /* Game screen overrides: top-aligned, no padding (handled per-child) */
+  #gameScreen {
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
   /* =============================================
      START SCREEN
      ============================================= */
@@ -238,22 +249,17 @@
   /* =============================================
      GAME SCREEN
      ============================================= */
-  #gameScreen {
-    gap: 10px;
-    justify-content: flex-start;
-    padding-top: 12px;
-  }
 
   /* Progress bar */
   .progress-row {
     display: flex;
-    gap: 7px;
+    gap: 8px;
     align-items: center;
     width: 100%;
-    max-width: 560px;
+    flex-shrink: 0;
   }
   .progress-dot {
-    width: 14px; height: 14px;
+    width: 16px; height: 16px;
     border-radius: 50%;
     background: rgba(255,255,255,0.30);
     border: 2px solid rgba(255,255,255,0.55);
@@ -266,89 +272,84 @@
     transform: scale(1.18);
   }
   .progress-label {
-    font-size: 0.82rem;
+    font-size: clamp(0.78rem, 2vw, 0.95rem);
     font-weight: 600;
     color: rgba(255,255,255,0.85);
     margin-left: 4px;
     letter-spacing: 0.1px;
   }
 
-  /* Character + game area row */
+  /* Character + game area row — fills all remaining vertical space */
   .game-row {
     display: flex;
-    align-items: flex-end;
+    align-items: stretch;
     gap: 12px;
     width: 100%;
-    max-width: 560px;
     flex: 1;
     min-height: 0;
   }
 
-  /* Character column */
+  /* Character column — fixed width, full height, centred vertically */
   .char-col {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     flex-shrink: 0;
-    width: clamp(72px, 18vw, 112px);
-    padding-bottom: 6px;
+    width: clamp(80px, 15vw, 130px);
   }
 
   /* Thought bubble */
   .thought-bubble {
     background: var(--white);
     border-radius: 16px;
-    padding: 7px 10px;
-    font-size: clamp(0.65rem, 2vw, 0.82rem);
+    padding: clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 14px);
+    font-size: clamp(0.7rem, 1.8vw, 1rem);
     font-weight: 600;
     color: var(--dark);
     text-align: center;
     line-height: 1.35;
     box-shadow: var(--shadow-sm);
     position: relative;
-    margin-bottom: 8px;
-    min-width: 88px;
-    max-width: 116px;
+    margin-bottom: 10px;
+    width: 100%;
   }
-  /* Tail pointing down-right toward character */
   .thought-bubble::after {
     content: '';
     position: absolute;
-    bottom: -14px;
+    bottom: -13px;
     left: 50%;
     transform: translateX(-50%);
     border-left: 9px solid transparent;
     border-right: 9px solid transparent;
-    border-top: 14px solid var(--white);
+    border-top: 13px solid var(--white);
   }
   .thought-bubble .food-name {
     color: var(--purple);
     font-weight: 700;
     display: block;
     margin-top: 2px;
-    font-size: 1.05em;
+    font-size: 1.1em;
   }
 
   .noodle-char {
-    width: clamp(66px, 17vw, 106px);
+    width: 100%;
     height: auto;
+    max-height: clamp(80px, 18vh, 160px);
     object-fit: contain;
     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
-    margin-top: 2px;
   }
 
-  /* Counting box */
+  /* Counting box — takes all remaining width, full height of game-row */
   .count-box {
     flex: 1;
     min-width: 0;
+    min-height: 0;
     background: var(--cream);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.9);
     position: relative;
     overflow: hidden;
-    aspect-ratio: 1 / 0.82;
-    max-height: 54vh;
-    min-height: 160px;
     border: 1.5px solid rgba(255,255,255,0.7);
   }
 
@@ -358,7 +359,6 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     border-radius: 50%;
-    /* No transform transition — keep it still */
   }
   .food-item .food-emoji {
     font-size: inherit;
@@ -371,7 +371,6 @@
   /* Yellow highlight circle — hidden until tapped */
   .food-item .tap-glow {
     position: absolute;
-    /* Slightly larger than the emoji area */
     inset: -8px;
     border-radius: 50%;
     background: var(--yellow-hi);
@@ -381,40 +380,33 @@
     pointer-events: none;
     z-index: 0;
   }
-  .food-item.tapped .tap-glow {
-    opacity: 1;
-  }
-  /* Disable pointer events once tapped */
+  .food-item.tapped .tap-glow { opacity: 1; }
   .food-item.tapped {
     cursor: default;
     pointer-events: none;
   }
 
-  /* Number answer buttons */
+  /* Number answer buttons — full width, generous height */
   .number-row {
     display: flex;
-    gap: 9px;
+    gap: clamp(6px, 2vw, 14px);
     justify-content: center;
     width: 100%;
-    max-width: 560px;
-    padding: 2px 0 6px;
-    min-height: 58px;
+    flex-shrink: 0;
   }
   .num-btn {
     flex: 1;
-    max-width: 84px;
-    min-height: 54px;
+    height: clamp(56px, 9vh, 80px);
     background: var(--white);
     color: var(--purple);
     font-family: var(--font);
-    font-size: clamp(1.3rem, 4vw, 1.75rem);
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
     font-weight: 800;
     border: 2px solid rgba(124, 92, 191, 0.18);
-    border-radius: 14px;
+    border-radius: 16px;
     cursor: pointer;
     box-shadow: 0 3px 0 rgba(124,92,191,0.22), var(--shadow-sm);
     transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
-    /* Hidden state */
     opacity: 0;
     pointer-events: none;
   }
@@ -581,12 +573,12 @@
 <div id="gameScreen" class="screen hidden">
 
   <!-- Progress dots -->
-  <div class="progress-row" id="progressRow">
+  <div class="progress-row" id="progressRow" style="padding: 12px 14px 0; align-self: stretch; box-sizing: border-box;">
     <!-- Built by JS -->
   </div>
 
   <!-- Character + count box -->
-  <div class="game-row">
+  <div class="game-row" style="padding: 8px 14px 8px;">
 
     <div class="char-col">
       <div class="thought-bubble" id="thoughtBubble">
@@ -601,7 +593,7 @@
   </div>
 
   <!-- Number answer buttons -->
-  <div class="number-row" id="numberRow"></div>
+  <div class="number-row" id="numberRow" style="padding: 0 14px 14px; align-self: stretch; box-sizing: border-box;"></div>
 </div>
 
 <!-- ==============================
