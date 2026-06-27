@@ -764,6 +764,11 @@ function layoutItems(n, boxW, boxH, itemRadius, minGap) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
+  // Reset transition lock whenever we leave the game
+  if (id === 'startScreen') {
+    isTransitioning = false;
+    answering = false;
+  }
 }
 
 /* ================================================
