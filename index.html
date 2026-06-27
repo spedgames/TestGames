@@ -2,1020 +2,1198 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Count with Noodle!</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pay the Price! 💰</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
-  /* =============================================
-     RESET & BASE
-     ============================================= */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+  /* ===== CSS VARIABLES ===== */
   :root {
-    --sky-top:    #5BC8F5;
-    --sky-bot:    #3AAEDC;
-    --cream:      #FFFDF7;
-    --yellow-hi:  rgba(255, 222, 60, 0.52);
-    --yellow-brd: rgba(240, 190, 0, 0.55);
-    --accent:     #FF8C42;
-    --accent-dk:  #D96A1A;
-    --purple:     #7C5CBF;
-    --purple-dk:  #5A3E9A;
-    --green:      #4CAF82;
-    --green-dk:   #2E8A5F;
-    --white:      #FFFFFF;
-    --dark:       #1E2D3D;
-    --mid:        #4A5D72;
-    --light-card: rgba(255,255,255,0.92);
-    --shadow-sm:  0 2px 8px rgba(0,0,0,0.10);
-    --shadow-md:  0 6px 24px rgba(0,0,0,0.12);
-    --shadow-lg:  0 12px 40px rgba(0,0,0,0.16);
-    --radius-lg:  22px;
-    --radius-xl:  32px;
-    --font:       'Poppins', sans-serif;
+    --bg: #0a0e1a;
+    --panel: #111827;
+    --panel2: #1a2235;
+    --vfd-bg: #0d1f0d;
+    --vfd-glow: #00ff88;
+    --vfd-dim: #00aa55;
+    --amber: #ffb300;
+    --amber-glow: #ff8c00;
+    --red: #ff3d5a;
+    --green: #00e676;
+    --blue: #00b0ff;
+    --card-bg: #1e2d45;
+    --card-border: #2e4a70;
+    --card-hover: #243555;
+    --selected: #00b0ff;
+    --selected-bg: #0a2540;
+    --correct: #00e676;
+    --wrong: #ff3d5a;
+    --text: #e8f4ff;
+    --text-dim: #7a9bb5;
+    --shadow: 0 8px 32px rgba(0,0,0,0.6);
+    --radius: 16px;
+    --radius-sm: 10px;
   }
+
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     width: 100%; height: 100%;
+    /* Account for CodePen's ~45px top bar */
+    max-height: 100dvh;
     overflow: hidden;
-    background: linear-gradient(170deg, var(--sky-top) 0%, var(--sky-bot) 100%);
-    font-family: var(--font);
-    touch-action: manipulation;
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
     -webkit-tap-highlight-color: transparent;
     user-select: none;
   }
 
-  /* =============================================
-     SUBTLE BACKGROUND SHAPES
-     ============================================= */
-  .bg-blob {
-    position: fixed;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    pointer-events: none;
-  }
-  .bg-blob.b1 { width: 260px; height: 200px; top: -60px; left: -80px; border-radius: 50%; }
-  .bg-blob.b2 { width: 180px; height: 180px; top: 10px;  right: -50px; }
-  .bg-blob.b3 { width: 140px; height: 140px; bottom: 60px; left: -40px; }
-
-  /* =============================================
-     SCREENS
-     ============================================= */
+  /* ===== SCREEN SYSTEM ===== */
   .screen {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    transition: opacity 0.35s ease;
-    padding: 16px;
-  }
-  .screen.hidden { opacity: 0; pointer-events: none; }
-
-  /* Game screen overrides: top-aligned, no padding (handled per-child) */
-  #gameScreen {
-    justify-content: flex-start;
-    align-items: stretch;
-    padding: 0;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
-  }
-
-  /* =============================================
-     START SCREEN
-     ============================================= */
-  #startScreen { gap: 16px; }
-
-  .logo-title {
-    font-size: clamp(1.9rem, 6.5vw, 3rem);
-    font-weight: 900;
-    color: var(--white);
-    text-shadow: 0 3px 0 rgba(0,0,0,0.15), 0 6px 20px rgba(0,0,0,0.12);
-    letter-spacing: -0.5px;
-    text-align: center;
-    line-height: 1.15;
-  }
-  .logo-sub {
-    font-size: clamp(0.85rem, 2.8vw, 1.1rem);
-    font-weight: 600;
-    color: rgba(255,255,255,0.88);
-    text-align: center;
-    letter-spacing: 0.3px;
-    margin-top: -6px;
-  }
-
-  .noodle-preview {
-    width: clamp(90px, 18vw, 130px);
-    height: clamp(90px, 18vw, 130px);
-    object-fit: contain;
-    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.18));
-    animation: bobFloat 3s ease-in-out infinite;
-  }
-  @keyframes bobFloat {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-9px); }
-  }
-
-  .start-card {
-    background: var(--light-card);
-    backdrop-filter: blur(8px);
-    border-radius: var(--radius-xl);
-    padding: 20px 26px;
-    max-width: 440px;
-    width: 100%;
-    box-shadow: var(--shadow-lg);
-  }
-  .start-card h2 {
-    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
-    font-weight: 700;
-    color: var(--dark);
-    margin-bottom: 10px;
-    text-align: center;
-    letter-spacing: -0.2px;
-  }
-  .instructions {
-    font-size: clamp(0.82rem, 2.4vw, 0.95rem);
-    color: var(--mid);
-    line-height: 1.7;
-    font-weight: 500;
-    text-align: center;
-  }
-  .instructions strong { color: var(--purple); font-weight: 700; }
-
-  /* Settings block on start screen */
-  .settings-block {
-    background: var(--light-card);
-    backdrop-filter: blur(8px);
-    border-radius: var(--radius-xl);
-    padding: 18px 24px;
-    max-width: 440px;
-    width: 100%;
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .setting-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .setting-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-  .setting-label {
-    font-size: clamp(0.8rem, 2.4vw, 0.9rem);
-    font-weight: 700;
-    color: var(--dark);
-  }
-  .setting-value {
-    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
-    font-weight: 800;
-    color: var(--purple);
-    min-width: 28px;
-    text-align: right;
-  }
-
-  /* Custom range slider */
-  input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 6px;
-    border-radius: 99px;
-    outline: none;
-    cursor: pointer;
-    /* Track fill handled via JS background */
-    background: linear-gradient(to right,
-      var(--purple) 0%,
-      var(--purple) var(--fill, 50%),
-      rgba(124,92,191,0.15) var(--fill, 50%),
-      rgba(124,92,191,0.15) 100%
-    );
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--white);
-    border: 3px solid var(--purple);
-    box-shadow: 0 2px 8px rgba(124,92,191,0.30);
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--white);
-    border: 3px solid var(--purple);
-    box-shadow: 0 2px 8px rgba(124,92,191,0.30);
-    cursor: pointer;
-    transition: transform 0.1s, box-shadow 0.1s;
-  }
-  input[type="range"]:active::-webkit-slider-thumb {
-    transform: scale(1.18);
-    box-shadow: 0 3px 12px rgba(124,92,191,0.40);
-  }
-  input[type="range"]:active::-moz-range-thumb {
-    transform: scale(1.18);
-    box-shadow: 0 3px 12px rgba(124,92,191,0.40);
-  }
-
-  .btn-start {
-    background: var(--accent);
-    color: var(--white);
-    font-family: var(--font);
-    font-size: clamp(1rem, 3.2vw, 1.25rem);
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    border: none;
-    border-radius: 50px;
-    padding: 15px 52px;
-    cursor: pointer;
-    box-shadow: 0 4px 0 var(--accent-dk), var(--shadow-md);
-    transition: transform 0.12s, box-shadow 0.12s;
-    min-height: 54px;
-  }
-  .btn-start:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 var(--accent-dk), 0 2px 8px rgba(0,0,0,0.15);
-  }
-
-  /* =============================================
-     GAME SCREEN
-     ============================================= */
-
-  /* Progress bar */
-  .progress-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-    flex-shrink: 0;
-  }
-  .progress-dot {
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.30);
-    border: 2px solid rgba(255,255,255,0.55);
-    transition: background 0.3s, border-color 0.3s, transform 0.3s;
-    flex-shrink: 0;
-  }
-  .progress-dot.done {
-    background: #FFD93D;
-    border-color: rgba(220,160,0,0.6);
-    transform: scale(1.18);
-  }
-  .progress-label {
-    font-size: clamp(0.78rem, 2vw, 0.95rem);
-    font-weight: 600;
-    color: rgba(255,255,255,0.85);
-    margin-left: 4px;
-    letter-spacing: 0.1px;
-  }
-
-  /* Character + game area row — fills all remaining vertical space */
-  .game-row {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    width: 100%;
-    flex: 1;
-    min-height: 0;
-  }
-
-  /* Character column — fixed width, full height, centred vertically */
-  .char-col {
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    width: clamp(80px, 15vw, 130px);
-  }
-
-  /* Thought bubble */
-  .thought-bubble {
-    background: var(--white);
-    border-radius: 16px;
-    padding: clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 14px);
-    font-size: clamp(0.7rem, 1.8vw, 1rem);
-    font-weight: 600;
-    color: var(--dark);
-    text-align: center;
-    line-height: 1.35;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-    margin-bottom: 10px;
-    width: 100%;
-  }
-  .thought-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -13px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 9px solid transparent;
-    border-right: 9px solid transparent;
-    border-top: 13px solid var(--white);
-  }
-  .thought-bubble .food-name {
-    color: var(--purple);
-    font-weight: 700;
-    display: block;
-    margin-top: 2px;
-    font-size: 1.1em;
-  }
-
-  .noodle-char {
-    width: 100%;
-    height: auto;
-    max-height: clamp(80px, 18vh, 160px);
-    object-fit: contain;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.18));
-  }
-
-  /* Counting box — takes all remaining width, full height of game-row */
-  .count-box {
-    flex: 1;
-    min-width: 0;
-    min-height: 0;
-    background: var(--cream);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.9);
-    position: relative;
-    overflow: hidden;
-    border: 1.5px solid rgba(255,255,255,0.7);
-  }
-
-  /* Food items inside box */
-  .food-item {
-    position: absolute;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    border-radius: 50%;
-  }
-  .food-item .food-emoji {
-    font-size: inherit;
-    line-height: 1;
-    pointer-events: none;
-    position: relative; z-index: 1;
-    display: block;
-  }
-
-  /* Yellow highlight circle — hidden until tapped */
-  .food-item .tap-glow {
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    background: var(--yellow-hi);
-    border: 2.5px solid var(--yellow-brd);
+    justify-content: center;
     opacity: 0;
-    transition: opacity 0.18s ease;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ===== BACKGROUND GRID ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,176,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,176,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
     pointer-events: none;
     z-index: 0;
   }
-  .food-item.tapped .tap-glow { opacity: 1; }
-  .food-item.tapped {
-    cursor: default;
-    pointer-events: none;
-  }
 
-  /* Number answer buttons — full width, generous height */
-  .number-row {
-    display: flex;
-    gap: clamp(10px, 3vw, 20px);
-    justify-content: center;
-    width: 100%;
-    flex-shrink: 0;
+  /* ===== LOADING SCREEN ===== */
+  #loadingScreen {
+    z-index: 100;
+    background: var(--bg);
+    gap: 24px;
   }
-  .num-btn {
-    flex: 1;
-    height: clamp(68px, 11vh, 96px);
-    background: var(--white);
-    color: var(--purple);
-    font-family: var(--font);
-    font-size: clamp(1.5rem, 4.5vw, 2.4rem);
-    font-weight: 800;
-    border: 2px solid rgba(124, 92, 191, 0.18);
-    border-radius: 18px;
-    cursor: pointer;
-    box-shadow: 0 4px 0 rgba(124,92,191,0.22), var(--shadow-sm);
-    transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .num-btn.visible {
-    opacity: 1;
-    pointer-events: auto;
-    transition: opacity 0.2s ease;
-  }
-  .num-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 rgba(124,92,191,0.22), 0 2px 6px rgba(0,0,0,0.08);
-  }
-  /* Correct — briefly turns green */
-  .num-btn.correct {
-    background: var(--green);
-    color: var(--white);
-    border-color: transparent;
-    box-shadow: 0 3px 0 var(--green-dk), var(--shadow-sm);
-  }
-  /* Wrong — just a subtle shake, no color change */
-  @keyframes gentleShake {
-    0%, 100% { transform: translateX(0); }
-    25%       { transform: translateX(-5px); }
-    75%       { transform: translateX(5px); }
-  }
-  .num-btn.wrong {
-    animation: gentleShake 0.32s ease;
-  }
-
-  /* =============================================
-     WIN SCREEN
-     ============================================= */
-  #winScreen { gap: 18px; }
-
-  .win-title {
-    font-size: clamp(1.9rem, 6.5vw, 3rem);
+  .loader-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
     font-weight: 900;
-    color: var(--white);
-    text-shadow: 0 3px 0 rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.12);
-    text-align: center;
-    line-height: 1.2;
-    letter-spacing: -0.3px;
+    color: var(--vfd-glow);
+    text-shadow: 0 0 20px var(--vfd-glow);
+    letter-spacing: 2px;
   }
-  .win-stars {
-    font-size: clamp(2rem, 7vw, 3rem);
-    letter-spacing: 6px;
+  .loader-bar-wrap {
+    width: min(320px, 80vw);
+    height: 8px;
+    background: #1a2235;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #2e4a70;
   }
-  .win-noodle {
-    width: clamp(100px, 22vw, 150px);
-    object-fit: contain;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
-    animation: winPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+  .loader-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--vfd-glow), var(--blue));
+    border-radius: 4px;
+    transition: width 0.2s ease;
+    box-shadow: 0 0 10px var(--vfd-glow);
   }
-  @keyframes winPop {
-    from { transform: scale(0.5); opacity: 0; }
-    to   { transform: scale(1);   opacity: 1; }
-  }
-  .win-card {
-    background: var(--light-card);
-    border-radius: var(--radius-xl);
-    padding: 18px 28px;
-    max-width: 380px;
-    width: 100%;
-    box-shadow: var(--shadow-lg);
-    text-align: center;
-  }
-  .win-msg {
-    font-size: clamp(0.95rem, 2.8vw, 1.1rem);
-    font-weight: 600;
-    color: var(--dark);
-    line-height: 1.55;
-  }
-  .btn-play-again {
-    background: var(--green);
-    color: var(--white);
-    font-family: var(--font);
-    font-size: clamp(1rem, 3.2vw, 1.25rem);
+  .loader-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
     font-weight: 700;
-    letter-spacing: 0.2px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== START SCREEN ===== */
+  #startScreen {
+    z-index: 10;
+    gap: 0;
+    padding: 20px;
+  }
+  .start-logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 6vw, 3.5rem);
+    background: linear-gradient(135deg, var(--vfd-glow) 0%, var(--blue) 50%, var(--amber) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 20px rgba(0,255,136,0.5));
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  .start-tagline {
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    color: var(--text-dim);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+  .start-demo {
+    background: var(--vfd-bg);
+    border: 2px solid var(--vfd-dim);
+    border-radius: var(--radius);
+    padding: 16px 32px;
+    margin-bottom: 28px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,255,136,0.1), inset 0 0 20px rgba(0,255,136,0.05);
+  }
+  .start-demo-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: var(--vfd-dim);
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+  }
+  .start-demo-price {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 6vw, 3rem);
+    color: var(--vfd-glow);
+    font-weight: 700;
+    text-shadow: 0 0 20px var(--vfd-glow), 0 0 40px rgba(0,255,136,0.3);
+    letter-spacing: 4px;
+  }
+  .instructions {
+    background: var(--panel2);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    max-width: 420px;
+    width: 100%;
+  }
+  .instructions p {
+    font-size: clamp(0.85rem, 2.2vw, 0.95rem);
+    color: var(--text-dim);
+    line-height: 1.6;
+    text-align: center;
+  }
+  .instructions strong { color: var(--amber); }
+
+  .btn-start {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--bg);
+    background: linear-gradient(135deg, var(--vfd-glow), var(--blue));
     border: none;
     border-radius: 50px;
-    padding: 15px 46px;
+    padding: 16px 48px;
     cursor: pointer;
-    box-shadow: 0 4px 0 var(--green-dk), var(--shadow-md);
-    transition: transform 0.12s, box-shadow 0.12s;
-    min-height: 54px;
+    transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+    box-shadow: 0 4px 24px rgba(0,255,136,0.4), 0 0 0 0 rgba(0,255,136,0);
+    min-height: 56px;
+    min-width: 180px;
   }
-  .btn-play-again:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 var(--green-dk), 0 2px 8px rgba(0,0,0,0.15);
+  .btn-start:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 8px 32px rgba(0,255,136,0.5); }
+  .btn-start:active { transform: translateY(0px) scale(0.97); }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen {
+    z-index: 10;
+    justify-content: flex-start;
+    padding: 0;
+    gap: 0;
+  }
+  .game-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px 6px;
+    gap: 7px;
+    max-width: 600px;
+    margin: 0 auto;
   }
 
-  /* Confetti */
-  .confetti-piece {
-    position: fixed;
+
+
+  /* ===== SEGMENTED PROGRESS BAR ===== */
+  .seg-progress {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .seg {
+    flex: 1;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--panel2);
+    border: 1.5px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: background 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+    overflow: hidden;
+  }
+  .seg.done {
+    background: var(--vfd-glow);
+    border-color: var(--vfd-glow);
+    color: #0a0e1a;
+    box-shadow: 0 0 8px rgba(0,255,136,0.5);
+  }
+  .seg.done .seg-num { display: none; }
+  .seg.done::after { content: '✓'; font-size: 0.72rem; font-weight: 900; }
+
+  /* VFD DISPLAY */
+  .vfd-display {
+    background: var(--vfd-bg);
+    border: 2px solid var(--vfd-dim);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,255,136,0.12), inset 0 0 16px rgba(0,255,136,0.05);
+    overflow: hidden;
+  }
+  .vfd-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0,0,0,0.1) 3px,
+      rgba(0,0,0,0.1) 4px
+    );
+    pointer-events: none;
+  }
+  .vfd-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .vfd-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.55rem;
+    color: var(--vfd-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .vfd-store {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.55rem;
+    color: var(--vfd-dim);
+    letter-spacing: 2px;
+  }
+  .vfd-price {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 11vw, 5.5rem);
+    font-weight: 700;
+    color: var(--vfd-glow);
+    text-shadow: 0 0 20px var(--vfd-glow), 0 0 60px rgba(0,255,136,0.2);
+    letter-spacing: 6px;
+    line-height: 1.1;
+    transition: all 0.2s ease;
+  }
+  .vfd-price.flash {
+    animation: priceFlash 0.4s ease;
+  }
+  @keyframes priceFlash {
+    0% { opacity: 1; }
+    30% { opacity: 0.1; color: #fff; }
+    60% { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+  .vfd-subtext {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    color: var(--vfd-dim);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  /* SELECTION TRAY */
+  .selection-tray {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-shrink: 0;
+    min-height: 48px;
+  }
+  .tray-slot {
+    width: clamp(70px, 18vw, 100px);
+    height: clamp(56px, 14vw, 80px);
+    border: 2px dashed var(--card-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel2);
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .tray-slot.filled {
+    border-color: var(--selected);
+    border-style: solid;
+    background: var(--selected-bg);
+    box-shadow: 0 0 14px rgba(0,176,255,0.3);
+  }
+  .tray-slot img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+  .tray-label {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.6rem, 1.5vw, 0.7rem);
+    font-weight: 700;
+    color: var(--selected);
+    text-align: center;
+    margin-top: 4px;
+    min-height: 14px;
+  }
+  .tray-plus {
+    font-size: 1.4rem;
+    color: var(--card-border);
+    font-weight: 900;
+  }
+  .tray-eq {
+    font-size: 1.4rem;
+    color: var(--card-border);
+    font-weight: 900;
+  }
+  .tray-total {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.85rem, 2.5vw, 1rem);
+    font-weight: 700;
+    color: var(--text-dim);
+    min-width: 70px;
+    text-align: left;
+  }
+  .tray-total.match { color: var(--correct); text-shadow: 0 0 10px var(--correct); }
+  .tray-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* money-grid kept for compatibility but layout now uses .money-zone/.money-row */
+  .money-grid { display: none; }
+  .money-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+    padding: 6px;
+    position: relative;
+    overflow: hidden;
+    min-height: 44px;
+  }
+  .money-card:hover {
+    transform: translateY(-2px);
+    background: var(--card-hover);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    border-color: #4a7aaa;
+  }
+  .money-card:active { transform: scale(0.95); }
+  .money-card.selected {
+    background: var(--selected-bg);
+    border-color: var(--selected);
+    box-shadow: 0 0 16px rgba(0,176,255,0.35), inset 0 0 12px rgba(0,176,255,0.05);
+  }
+  .money-card.correct-flash {
+    animation: correctFlash 0.5s ease forwards;
+  }
+  .money-card.wrong-flash {
+    animation: wrongFlash 0.5s ease forwards;
+  }
+  @keyframes correctFlash {
+    0% { background: var(--selected-bg); }
+    30% { background: rgba(0,230,118,0.3); border-color: var(--correct); box-shadow: 0 0 24px rgba(0,230,118,0.5); }
+    100% { background: var(--selected-bg); }
+  }
+  @keyframes wrongFlash {
+    0% { background: var(--selected-bg); }
+    30% { background: rgba(255,61,90,0.3); border-color: var(--wrong); box-shadow: 0 0 24px rgba(255,61,90,0.5); }
+    100% { background: var(--card-bg); border-color: var(--card-border); }
+  }
+  .money-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .money-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+    pointer-events: none;
+    display: block;
+  }
+  /* Coins (all cents + $1 coin) are smaller than notes — scale down */
+  .money-card.cents-type img,
+  .money-card.coin-type img {
+    width: 72%;
+    height: 72%;
+  }
+  /* Hide labels — image-only cards */
+  .money-card-label { display: none; }
+  .money-card.cents-type { border-color: rgba(255,179,0,0.25); }
+  .money-card.dollars-type { border-color: rgba(0,176,255,0.2); }
+  .money-card.coin-type { border-color: rgba(0,176,255,0.2); }
+
+  /* ===== MONEY ZONE SEPARATOR ===== */
+  .money-zone {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #0d1628;
+    border: 1.5px solid #1e3050;
+    border-radius: var(--radius);
+    padding: 8px;
+    gap: 6px;
+    position: relative;
+  }
+  .money-zone-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #2a4060;
+    text-align: center;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .money-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* FEEDBACK OVERLAY */
+  .feedback-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(10,14,26,0.88);
+    border-radius: var(--radius);
     opacity: 0;
     pointer-events: none;
-    animation: confettiFall linear forwards;
-    z-index: 100;
-    border-radius: 2px;
+    transition: opacity 0.2s ease;
+    z-index: 20;
+    backdrop-filter: blur(4px);
   }
-  @keyframes confettiFall {
-    0%   { transform: translateY(-20px) rotate(0deg);    opacity: 0.9; }
-    100% { transform: translateY(105vh) rotate(540deg);  opacity: 0; }
+  .feedback-overlay.show { opacity: 1; pointer-events: all; }
+  .feedback-emoji { font-size: clamp(2.5rem, 8vw, 4rem); animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .feedback-msg {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .feedback-msg.correct { color: var(--correct); text-shadow: 0 0 20px var(--correct); }
+  .feedback-msg.wrong { color: var(--wrong); text-shadow: 0 0 20px var(--wrong); }
+  .feedback-sub {
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
+    color: var(--text-dim);
+    font-weight: 700;
+    text-align: center;
+  }
+  .btn-next {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--bg);
+    background: var(--vfd-glow);
+    border: none;
+    border-radius: 50px;
+    padding: 12px 32px;
+    cursor: pointer;
+    margin-top: 8px;
+    min-height: 48px;
+    transition: transform 0.15s, filter 0.15s;
+    box-shadow: 0 4px 16px rgba(0,255,136,0.3);
+  }
+  .btn-next:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-next:active { transform: scale(0.96); }
+  @keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+  /* RESULT SCREEN */
+  #resultScreen {
+    z-index: 10;
+    gap: 20px;
+    padding: 20px;
+  }
+  .result-trophy { font-size: clamp(3rem, 10vw, 5rem); animation: bounce 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes bounce {
+    0% { transform: scale(0) rotate(-10deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  .result-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    font-weight: 900;
+    color: var(--vfd-glow);
+    text-shadow: 0 0 20px var(--vfd-glow);
+    letter-spacing: 3px;
+    text-align: center;
+  }
+  .result-score-wrap {
+    background: var(--panel2);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 20px 32px;
+    text-align: center;
+  }
+  .result-score-label { font-size: 0.75rem; font-weight: 800; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .result-score-num {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    font-weight: 900;
+    color: var(--amber);
+    text-shadow: 0 0 20px rgba(255,179,0,0.5);
+  }
+  .result-sub { font-size: 0.9rem; color: var(--text-dim); font-weight: 700; margin-top: 4px; }
+  .result-stars { font-size: 2rem; letter-spacing: 4px; margin-top: 4px; }
+  .btn-play-again {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--bg);
+    background: linear-gradient(135deg, var(--vfd-glow), var(--blue));
+    border: none;
+    border-radius: 50px;
+    padding: 16px 40px;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 24px rgba(0,255,136,0.4);
+    min-height: 56px;
+    min-width: 180px;
+  }
+  .btn-play-again:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .btn-play-again:active { transform: scale(0.97); }
+
+  /* PARTICLES */
+  .particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 1.4rem;
+    z-index: 999;
+    animation: particleFly 0.8s ease-out forwards;
+  }
+  @keyframes particleFly {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+  }
+
+
+
+  /* RESPONSIVE TWEAKS */
+  .screen { top: 0; }
+
+  @media (max-height: 620px) {
+    .game-wrapper { padding: 5px 8px 4px; gap: 5px; }
+    .vfd-display { padding: 6px 12px; }
+    .vfd-price { font-size: clamp(1.8rem, 6vw, 2.8rem); }
+    .seg { height: 22px; font-size: 0.55rem; }
+    .money-zone { padding: 5px; gap: 4px; }
+    .money-row { gap: 4px; }
+    .tray-slot { width: clamp(52px, 14vw, 76px); height: clamp(42px, 11vw, 62px); }
   }
 </style>
 </head>
 <body>
 
-<!-- Subtle background blobs -->
-<div class="bg-blob b1"></div>
-<div class="bg-blob b2"></div>
-<div class="bg-blob b3"></div>
-
-<!-- ==============================
-     START SCREEN
-     ============================== -->
-<div id="startScreen" class="screen">
-  <div class="logo-title">Count with Noodle! 🎵</div>
-  <div class="logo-sub">A Super Simple Songs Adventure</div>
-
-  <img src="assets/Noodle.png" alt="Noodle" class="noodle-preview"
-       onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:5rem;line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.2))\'>🐛</div>')">
-
-  <div class="start-card">
-    <h2>How to Play</h2>
-    <p class="instructions">
-      👆 <strong>Tap each food item</strong> to count it.<br>
-      🔢 Then tap the <strong>correct number</strong> to win!
-    </p>
-  </div>
-
-  <!-- Settings -->
-  <div class="settings-block">
-
-    <!-- Rounds -->
-    <div class="setting-row">
-      <div class="setting-header">
-        <span class="setting-label">🎮 Rounds</span>
-        <span class="setting-value" id="roundsVal">5</span>
-      </div>
-      <input type="range" id="settingRounds" min="3" max="10" value="5"
-             oninput="updateSlider(this, 'roundsVal', 3, 10)">
-    </div>
-
-    <!-- Max quantity -->
-    <div class="setting-row">
-      <div class="setting-header">
-        <span class="setting-label">🔢 Count up to</span>
-        <span class="setting-value" id="qtyVal">5</span>
-      </div>
-      <input type="range" id="settingQty" min="1" max="5" value="5"
-             oninput="updateSlider(this, 'qtyVal', 1, 5)">
-    </div>
-
-  </div>
-
-  <button class="btn-start" onclick="startGame()">Let's Count! 🎉</button>
+<!-- ===== LOADING SCREEN ===== -->
+<div class="screen active" id="loadingScreen">
+  <div class="loader-title">PAY THE PRICE!</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+  <div class="loader-label" id="loaderLabel">LOADING ASSETS...</div>
 </div>
 
-<!-- ==============================
-     GAME SCREEN
-     ============================== -->
-<div id="gameScreen" class="screen hidden">
-
-  <!-- Progress dots -->
-  <div class="progress-row" id="progressRow" style="padding: 12px 28px 0; align-self: stretch; box-sizing: border-box;">
-    <!-- Built by JS -->
-  </div>
-
-  <!-- Character + count box -->
-  <div class="game-row" style="padding: 8px 28px 8px;">
-
-    <div class="char-col">
-      <div class="thought-bubble" id="thoughtBubble">
-        Count all the
-        <span class="food-name" id="foodName"></span>
-      </div>
-      <img src="assets/Noodle.png" alt="Noodle" class="noodle-char"
-           onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:3.5rem;line-height:1;margin-top:4px\'>🐛</div>')">
+<!-- ===== START SCREEN ===== -->
+<div class="screen" id="startScreen">
+  <div class="start-logo">PAY THE<br>PRICE!</div>
+  <div class="start-tagline">💰 Money Recognition Game</div>
+  <div class="start-demo">
+    <div class="vfd-label-row">
+      <div class="vfd-label">▶ PRICE TO PAY</div>
+      <div class="vfd-store">MATH MART ◀</div>
     </div>
-
-    <div class="count-box" id="countBox"></div>
+    <div class="vfd-price">$1.20</div>
+    <div class="vfd-subtext">TAP TO PAY ▼</div>
   </div>
-
-  <!-- Number answer buttons -->
-  <div class="number-row" id="numberRow" style="padding: 0 28px 18px; align-self: stretch; box-sizing: border-box;"></div>
+  <div class="instructions">
+    <p>A price appears on the screen.<br>
+    <strong>Tap 2 items</strong> — one dollar amount &amp; one cent amount — that add up to the price shown!</p>
+  </div>
+  <button class="btn-start" id="btnStart" onclick="startGame()">▶ START</button>
 </div>
 
-<!-- ==============================
-     WIN SCREEN
-     ============================== -->
-<div id="winScreen" class="screen hidden">
-  <div class="win-title">Amazing Job! 🎉</div>
-  <div class="win-stars">⭐⭐⭐⭐⭐</div>
-  <img src="assets/Noodle.png" alt="Noodle" class="win-noodle"
-       onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=\'font-size:5rem;line-height:1\'>🐛</div>')">
-  <div class="win-card">
-    <p class="win-msg" id="winMsg">You counted all 5 rounds!<br>Noodle is SO proud of you! 🌈</p>
+<!-- ===== GAME SCREEN ===== -->
+<div class="screen" id="gameScreen">
+  <div class="game-wrapper">
+
+    <!-- Segmented Progress Bar -->
+    <div class="seg-progress" id="segProgress"></div>
+
+    <!-- VFD Display -->
+    <div class="vfd-display">
+      <div class="vfd-label-row">
+        <div class="vfd-label">▶ PRICE TO PAY</div>
+        <div class="vfd-store">MATH MART ◀</div>
+      </div>
+      <div class="vfd-price" id="priceDisplay">$1.05</div>
+      <div class="vfd-subtext" id="vfdSub">SELECT YOUR PAYMENT ▼</div>
+    </div>
+
+    <!-- Selection Tray -->
+    <div class="selection-tray">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="tray-slot" id="tray0"></div>
+        <div class="tray-label" id="trayLabel0"></div>
+      </div>
+      <div class="tray-plus">+</div>
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="tray-slot" id="tray1"></div>
+        <div class="tray-label" id="trayLabel1"></div>
+      </div>
+      <div class="tray-eq">=</div>
+      <div class="tray-total" id="trayTotal">?</div>
+    </div>
+
+    <!-- Money Zone: fixed positions, dollars top / cents bottom -->
+    <div class="money-zone">
+      <div class="money-zone-label">choose your payment</div>
+      <!-- Row 1: dollar notes/coins ($1, $2, $5, $10) -->
+      <div class="money-row" id="dollarRow"></div>
+      <!-- Row 2: cent coins (5c, 10c, 20c, 50c) -->
+      <div class="money-row" id="centRow"></div>
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div class="feedback-overlay" id="feedbackOverlay">
+      <div class="feedback-emoji" id="feedbackEmoji">✅</div>
+      <div class="feedback-msg" id="feedbackMsg">CORRECT!</div>
+      <div class="feedback-sub" id="feedbackSub"></div>
+      <button class="btn-next" id="btnNext" onclick="nextRound()">NEXT →</button>
+    </div>
   </div>
-  <button class="btn-play-again" onclick="startGame()">Play Again! 🎵</button>
+</div>
+
+<!-- ===== RESULT SCREEN ===== -->
+<div class="screen" id="resultScreen">
+  <div class="result-trophy" id="resultTrophy">🏆</div>
+  <div class="result-title" id="resultTitle">GREAT JOB!</div>
+  <div class="result-score-wrap">
+    <div class="result-score-label">Final Score</div>
+    <div class="result-score-num" id="finalScore">0</div>
+    <div class="result-sub" id="resultSub">out of 10 rounds</div>
+    <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+  </div>
+  <button class="btn-play-again" onclick="restartGame()">▶ PLAY AGAIN</button>
 </div>
 
 <script>
-/* ================================================
-   GAME DATA — food items with emoji
-   ================================================ */
-const FOODS = [
-  { name: 'apples',       emoji: '🍎' },
-  { name: 'bananas',      emoji: '🍌' },
-  { name: 'strawberries', emoji: '🍓' },
-  { name: 'oranges',      emoji: '🍊' },
-  { name: 'grapes',       emoji: '🍇' },
-  { name: 'lemons',       emoji: '🍋' },
-  { name: 'watermelons',  emoji: '🍉' },
-  { name: 'cherries',     emoji: '🍒' },
-  { name: 'pineapples',   emoji: '🍍' },
-  { name: 'peaches',      emoji: '🍑' },
-  { name: 'cupcakes',     emoji: '🧁' },
-  { name: 'pizzas',       emoji: '🍕' },
-  { name: 'tacos',        emoji: '🌮' },
+// ===================================================
+// ASSET DEFINITIONS
+// ===================================================
+const MONEY = [
+  { id: 'c5',   label: '5¢',   value: 5,    cents: true,  img: 'https://i.postimg.cc/k4Wpcs5P/5-cents.png' },
+  { id: 'c10',  label: '10¢',  value: 10,   cents: true,  img: 'https://i.postimg.cc/tTFM5kgy/10-cents.png' },
+  { id: 'c20',  label: '20¢',  value: 20,   cents: true,  img: 'https://i.postimg.cc/bJ1BTgvq/20-cents.png' },
+  { id: 'c50',  label: '50¢',  value: 50,   cents: true,  img: 'https://i.postimg.cc/FR0BZpK9/50-cents.png' },
+  { id: 'd1',   label: '$1',   value: 100,  cents: false, img: 'https://i.postimg.cc/Jnj2qxhL/1-dollar.png' },
+  { id: 'd2',   label: '$2',   value: 200,  cents: false, img: 'https://i.postimg.cc/MT1FD5Gk/2-dollars.png' },
+  { id: 'd5',   label: '$5',   value: 500,  cents: false, img: 'https://i.postimg.cc/XJ9z8Lv0/5-dollars.png' },
+  { id: 'd10',  label: '$10',  value: 1000, cents: false, img: 'https://i.postimg.cc/bJ1BTgvp/10-dollars.png' },
 ];
 
-// These are set from the start screen settings before each game
-let TOTAL_ROUNDS  = 5;   // 3–10, chosen by player
-let MAX_QUANTITY  = 5;   // 1–5, chosen by player
+const DOLLAR_ITEMS = MONEY.filter(m => !m.cents);
+const CENT_ITEMS   = MONEY.filter(m => m.cents);
 
-/* ================================================
-   AUDIO — Web Audio API for sound effects
-   ================================================ */
+// ===================================================
+// GAME STATE
+// ===================================================
+let state = {
+  score: 0,
+  round: 0,
+  lives: 3,
+  totalRounds: 10,
+  currentPrice: 0,
+  correctDollar: null,
+  correctCent: null,
+  selection: [],        // array of up to 2 selected money IDs
+  locked: false,
+  currentOptions: [],
+};
+
+// ===================================================
+// PRELOAD ASSETS
+// ===================================================
+function preloadAssets() {
+  const bar = document.getElementById('loaderBar');
+  const label = document.getElementById('loaderLabel');
+  const imgs = MONEY.map(m => m.img);
+  let loaded = 0;
+
+  return new Promise((resolve) => {
+    if (imgs.length === 0) { resolve(); return; }
+    imgs.forEach(src => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        const pct = Math.round((loaded / imgs.length) * 100);
+        bar.style.width = pct + '%';
+        label.textContent = `LOADING... ${pct}%`;
+        if (loaded === imgs.length) {
+          label.textContent = 'READY!';
+          setTimeout(resolve, 400);
+        }
+      };
+      img.src = src;
+    });
+  });
+}
+
+// ===================================================
+// SCREEN MANAGEMENT
+// ===================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===================================================
+// GENERATE ROUND
+// ===================================================
+function generateRound() {
+  // Pick a random dollar item and a random cent item
+  const dollar = DOLLAR_ITEMS[Math.floor(Math.random() * DOLLAR_ITEMS.length)];
+  const cent   = CENT_ITEMS[Math.floor(Math.random() * CENT_ITEMS.length)];
+  const total  = dollar.value + cent.value;
+
+  state.correctDollar = dollar;
+  state.correctCent   = cent;
+  state.currentPrice  = total;
+  state.selection     = [];
+  state.locked        = false;
+  // All 8 cards are always visible — no options list needed
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===================================================
+// RENDER GAME UI
+// ===================================================
+function renderGame() {
+  // Price display
+  const dollars = Math.floor(state.currentPrice / 100);
+  const cents   = state.currentPrice % 100;
+  const priceStr = `$${dollars}.${String(cents).padStart(2, '0')}`;
+  const el = document.getElementById('priceDisplay');
+  el.textContent = priceStr;
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+
+  // Clear any selected/flash states from previous round
+  document.querySelectorAll('.money-card').forEach(card => {
+    card.classList.remove('selected', 'correct-flash', 'wrong-flash');
+  });
+
+  // Tray
+  renderTray();
+
+  // Progress
+  renderProgress();
+
+  // Hide feedback
+  document.getElementById('feedbackOverlay').classList.remove('show');
+  document.getElementById('vfdSub').textContent = 'SELECT YOUR PAYMENT ▼';
+}
+
+// Build the segmented progress bar DOM (called once at game start)
+function buildProgress() {
+  const container = document.getElementById('segProgress');
+  container.innerHTML = '';
+  for (let i = 1; i <= state.totalRounds; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.id = `seg${i}`;
+    const num = document.createElement('span');
+    num.className = 'seg-num';
+    num.textContent = i;
+    seg.appendChild(num);
+    container.appendChild(seg);
+  }
+}
+
+// Light up segments equal to current score
+function renderProgress() {
+  for (let i = 1; i <= state.totalRounds; i++) {
+    const seg = document.getElementById(`seg${i}`);
+    if (!seg) continue;
+    if (i <= state.score) seg.classList.add('done');
+    else seg.classList.remove('done');
+  }
+}
+
+function renderTray() {
+  const sel = state.selection;
+  const slots = [document.getElementById('tray0'), document.getElementById('tray1')];
+  const labels = [document.getElementById('trayLabel0'), document.getElementById('trayLabel1')];
+  const totalEl = document.getElementById('trayTotal');
+
+  slots.forEach((slot, i) => {
+    slot.innerHTML = '';
+    labels[i].textContent = '';
+    if (sel[i]) {
+      const m = MONEY.find(x => x.id === sel[i]);
+      if (m) {
+        slot.classList.add('filled');
+        const img = document.createElement('img');
+        img.src = m.img;
+        img.alt = m.label;
+        slot.appendChild(img);
+        labels[i].textContent = m.label;
+      }
+    } else {
+      slot.classList.remove('filled');
+    }
+  });
+
+  // Show running total
+  if (sel.length === 0) {
+    totalEl.textContent = '?';
+    totalEl.className = 'tray-total';
+  } else if (sel.length === 1) {
+    const m = MONEY.find(x => x.id === sel[0]);
+    const val = m ? m.value : 0;
+    totalEl.textContent = formatMoney(val);
+    totalEl.className = 'tray-total';
+  } else {
+    const vals = sel.map(id => { const m = MONEY.find(x => x.id === id); return m ? m.value : 0; });
+    const sum = vals[0] + vals[1];
+    totalEl.textContent = formatMoney(sum);
+    totalEl.className = sum === state.currentPrice ? 'tray-total match' : 'tray-total';
+  }
+}
+
+function renderGrid() {
+  // Fixed order: dollars top row, cents bottom row — positions never change
+  const DOLLAR_ORDER = ['d1', 'd2', 'd5', 'd10'];
+  const CENT_ORDER   = ['c5', 'c10', 'c20', 'c50'];
+
+  function buildRow(rowId, ids) {
+    const row = document.getElementById(rowId);
+    row.innerHTML = '';
+    ids.forEach(id => {
+      const m = MONEY.find(x => x.id === id);
+      const card = document.createElement('div');
+      // $1 is a coin — use coin-type sizing; $2/$5/$10 are notes
+      const isCoin = (id === 'd1') || m.cents;
+      const typeClass = m.cents ? 'cents-type' : (id === 'd1' ? 'coin-type' : 'dollars-type');
+      card.className = `money-card ${typeClass}`;
+      card.dataset.id = id;
+
+      const img = document.createElement('img');
+      img.src = m.img;
+      img.alt = m.label;
+      card.appendChild(img);
+
+      card.addEventListener('click', () => onCardClick(id));
+      card.addEventListener('touchend', (e) => { e.preventDefault(); onCardClick(id); }, { passive: false });
+
+      row.appendChild(card);
+    });
+  }
+
+  buildRow('dollarRow', DOLLAR_ORDER);
+  buildRow('centRow',   CENT_ORDER);
+}
+
+function formatMoney(cents) {
+  const d = Math.floor(cents / 100);
+  const c = cents % 100;
+  return `$${d}.${String(c).padStart(2, '0')}`;
+}
+
+// ===================================================
+// CARD CLICK LOGIC
+// ===================================================
+function onCardClick(id) {
+  if (state.locked) return;
+
+  const m = MONEY.find(x => x.id === id);
+  if (!m) return;
+
+  const sel = state.selection;
+  const idx = sel.indexOf(id);
+
+  // Deselect if already selected
+  if (idx !== -1) {
+    sel.splice(idx, 1);
+    updateCardSelected(id, false);
+    renderTray();
+    return;
+  }
+
+  // Can only select 2 items; enforce: 1 dollar + 1 cent
+  if (sel.length >= 2) return;
+
+  // Check type constraint: if we already have a dollar, only allow cent (and vice versa)
+  if (sel.length === 1) {
+    const existing = MONEY.find(x => x.id === sel[0]);
+    if (existing.cents === m.cents) {
+      // Same type — show a shake or ignore
+      shakeCard(id);
+      return;
+    }
+  }
+
+  sel.push(id);
+  updateCardSelected(id, true);
+  renderTray();
+
+  // Auto-check when 2 selected
+  if (sel.length === 2) {
+    setTimeout(checkAnswer, 300);
+  }
+}
+
+function updateCardSelected(id, selected) {
+  document.querySelectorAll('.money-card').forEach(card => {
+    if (card.dataset.id === id) {
+      if (selected) card.classList.add('selected');
+      else card.classList.remove('selected');
+    }
+  });
+}
+
+function shakeCard(id) {
+  document.querySelectorAll('.money-card').forEach(card => {
+    if (card.dataset.id === id) {
+      card.style.animation = 'wrongFlash 0.3s ease';
+      setTimeout(() => { card.style.animation = ''; }, 300);
+    }
+  });
+}
+
+// ===================================================
+// CHECK ANSWER
+// ===================================================
+function checkAnswer() {
+  state.locked = true;
+  const sel = state.selection;
+  const vals = sel.map(id => { const m = MONEY.find(x => x.id === id); return m ? m.value : 0; });
+  const sum = vals[0] + vals[1];
+  const correct = sum === state.currentPrice;
+
+  // Flash cards
+  sel.forEach(id => {
+    document.querySelectorAll('.money-card').forEach(card => {
+      if (card.dataset.id === id) {
+        card.classList.add(correct ? 'correct-flash' : 'wrong-flash');
+      }
+    });
+  });
+
+  setTimeout(() => showFeedback(correct, sum), 400);
+}
+
+function showFeedback(correct, sum) {
+  const overlay = document.getElementById('feedbackOverlay');
+  const emoji   = document.getElementById('feedbackEmoji');
+  const msg     = document.getElementById('feedbackMsg');
+  const sub     = document.getElementById('feedbackSub');
+  const vfdsub  = document.getElementById('vfdSub');
+
+  if (correct) {
+    state.score++;
+    renderProgress(); // light up the new segment immediately
+    playCorrectSound();
+    emoji.textContent = ['🎉','✅','💰','🤑','⭐'][Math.floor(Math.random()*5)];
+    msg.textContent = ['CORRECT!','NICE ONE!','WELL DONE!','PERFECT!'][Math.floor(Math.random()*4)];
+    msg.className = 'feedback-msg correct';
+    sub.textContent = `${formatMoney(sum)} — That's the right amount!`;
+    vfdsub.textContent = '✓ PAYMENT ACCEPTED ✓';
+    spawnParticles(true);
+  } else {
+    state.lives = Math.max(0, state.lives - 1);
+
+    emoji.textContent = ['❌','💔','🙈','😬'][Math.floor(Math.random()*4)];
+    msg.textContent = ['TRY AGAIN!','NOT QUITE!','OOPS!','KEEP GOING!'][Math.floor(Math.random()*4)];
+    msg.className = 'feedback-msg wrong';
+    const dLabel = state.correctDollar.label;
+    const cLabel = state.correctCent.label;
+    sub.textContent = `The answer was ${dLabel} + ${cLabel} = ${formatMoney(state.currentPrice)}`;
+    vfdsub.textContent = '✗ PAYMENT DECLINED ✗';
+  }
+
+  overlay.classList.add('show');
+
+  if (state.round >= state.totalRounds) {
+    document.getElementById('btnNext').textContent = 'FINISH →';
+  } else {
+    document.getElementById('btnNext').textContent = 'NEXT →';
+  }
+}
+
+// ===================================================
+// PARTICLES
+// ===================================================
+function spawnParticles(positive) {
+  const emojis = positive
+    ? ['💰','⭐','✨','🌟','💵','🎉']
+    : ['💔','😬'];
+  const count = positive ? 6 : 2;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const x = 20 + Math.random() * 60;
+      const y = 20 + Math.random() * 60;
+      const dx = (Math.random() - 0.5) * 200;
+      const dy = -(50 + Math.random() * 150);
+      p.style.cssText = `left:${x}vw;top:${y}vh;--dx:${dx}px;--dy:${dy}px;animation-delay:${Math.random()*0.2}s`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }, i * 80);
+  }
+}
+
+// ===================================================
+// SOUND EFFECTS (Web Audio API — no external files)
+// ===================================================
 let audioCtx = null;
 
-function getCtx() {
+function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-/* Short pleasant tap tone when counting an item */
-function playTap() {
+function playCorrectSound() {
   try {
-    const ctx = getCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(700, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.06);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.14);
-  } catch(e) {}
-}
-
-/* Pleasant C–E–G chime for correct answer */
-function playCorrect() {
-  try {
-    const ctx = getCtx();
-    [523.25, 659.25, 783.99].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
+    const ctx = getAudioCtx();
+    // Two-note ascending chime: C5 → E5
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.value = freq;
-      const t = ctx.currentTime + i * 0.11;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
-      osc.start(t);
-      osc.stop(t + 0.34);
-    });
-  } catch(e) {}
-}
-
-/* Win tune: SSS.mp3, with Web Audio fanfare fallback */
-let winAudio = null;
-function playWinTune() {
-  try {
-    if (!winAudio) {
-      winAudio = new Audio('assets/SSS.mp3');
-      winAudio.volume = 0.85;
-    }
-    winAudio.currentTime = 0;
-    winAudio.play().catch(() => playFanfare());
-  } catch(e) { playFanfare(); }
-}
-
-function playFanfare() {
-  try {
-    const ctx = getCtx();
-    const notes = [
-      { f: 523.25, t: 0,    d: 0.18 },
-      { f: 659.25, t: 0.14, d: 0.18 },
-      { f: 783.99, t: 0.28, d: 0.18 },
-      { f: 1046.5, t: 0.42, d: 0.42 },
-      { f: 783.99, t: 0.60, d: 0.14 },
-      { f: 1046.5, t: 0.72, d: 0.60 },
-    ];
-    notes.forEach(({ f, t, d }) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'triangle';
-      osc.frequency.value = f;
-      const start = ctx.currentTime + t;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      const start = ctx.currentTime + i * 0.13;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.28, start + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + d);
+      gain.gain.linearRampToValueAtTime(0.22, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
       osc.start(start);
-      osc.stop(start + d + 0.05);
+      osc.stop(start + 0.42);
     });
-  } catch(e) {}
+  } catch(e) { /* audio blocked — fail silently */ }
 }
 
-/* ================================================
-   GAME STATE
-   ================================================ */
-let currentRound    = 0;
-let correctCount    = 0;   // how many items this round
-let tappedCount     = 0;   // how many the player has tapped
-let answering       = false;  // true once number buttons are visible
-let isTransitioning = false;  // locked during round change
-
-/* ================================================
-   LAYOUT — random non-overlapping positions
-   ================================================ */
-/**
- * Place n circles of radius itemRadius inside a box of boxW × boxH,
- * with at least minGap pixels between each circle edge.
- * Returns array of { x, y } centre points.
- */
-function layoutItems(n, boxW, boxH, itemRadius, minGap) {
-  const pad     = itemRadius + 12;
-  const minDist = (itemRadius * 2) + minGap;
-  const placed  = [];
-  let attempts  = 0;
-
-  while (placed.length < n && attempts < 3000) {
-    attempts++;
-    const x = pad + Math.random() * (boxW - pad * 2);
-    const y = pad + Math.random() * (boxH - pad * 2);
-    let ok = true;
-    for (const p of placed) {
-      const dx = p.x - x, dy = p.y - y;
-      if (Math.sqrt(dx * dx + dy * dy) < minDist) { ok = false; break; }
-    }
-    if (ok) placed.push({ x, y });
-  }
-  return placed;
-}
-
-/* ================================================
-   SCREEN MANAGEMENT
-   ================================================ */
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
-
-/* ================================================
-   GAME FLOW
-   ================================================ */
-/* Update slider fill and displayed value */
-function updateSlider(input, labelId, min, max) {
-  const val  = parseInt(input.value);
-  const pct  = ((val - min) / (max - min)) * 100;
-  input.style.setProperty('--fill', pct + '%');
-  document.getElementById(labelId).textContent = val;
-}
-
-/* Initialise slider fills on page load */
-function initSliders() {
-  const rounds = document.getElementById('settingRounds');
-  const qty    = document.getElementById('settingQty');
-  updateSlider(rounds, 'roundsVal', 3, 10);
-  updateSlider(qty,    'qtyVal',    1, 5);
-}
-
+// ===================================================
+// GAME FLOW
+// ===================================================
 function startGame() {
-  // Read player's chosen settings
-  TOTAL_ROUNDS = parseInt(document.getElementById('settingRounds').value);
-  MAX_QUANTITY = parseInt(document.getElementById('settingQty').value);
-
-  currentRound    = 0;
-  isTransitioning = false;
+  state.score  = 0;
+  state.round  = 0;
+  state.lives  = 3;
+  state.locked = false;
+  document.getElementById('btnNext').textContent = 'NEXT →';
   showScreen('gameScreen');
-  buildProgressDots();
+  buildProgress(); // create the 10 segments
+  renderGrid();    // build the fixed money grid once
   nextRound();
 }
 
-/* Build the five progress indicator dots */
-function buildProgressDots() {
-  const row = document.getElementById('progressRow');
-  row.innerHTML = '';
-  for (let i = 0; i < TOTAL_ROUNDS; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'progress-dot';
-    dot.id = 'dot' + i;
-    row.appendChild(dot);
-  }
-  const lbl = document.createElement('span');
-  lbl.className = 'progress-label';
-  lbl.id = 'progressLabel';
-  row.appendChild(lbl);
-}
-
-/* Refresh dot colours and the round label */
-function updateProgress() {
-  for (let i = 0; i < TOTAL_ROUNDS; i++) {
-    const dot = document.getElementById('dot' + i);
-    if (dot) dot.classList.toggle('done', i < currentRound);
-  }
-  const lbl = document.getElementById('progressLabel');
-  if (lbl) lbl.textContent = `Round ${Math.min(currentRound + 1, TOTAL_ROUNDS)} of ${TOTAL_ROUNDS}`;
-
-}
-
-/* Set up one new round */
 function nextRound() {
-  if (isTransitioning) return;
-  if (currentRound >= TOTAL_ROUNDS) { endGame(); return; }
-
-  tappedCount = 0;
-  answering   = false;
-  updateProgress();
-
-  // Pick a random food and a quantity 1–MAX_QUANTITY
-  const food   = FOODS[Math.floor(Math.random() * FOODS.length)];
-  correctCount = 1 + Math.floor(Math.random() * MAX_QUANTITY);
-
-  // Update Noodle's thought bubble
-  document.getElementById('foodName').textContent = food.emoji + ' ' + food.name;
-
-  // Populate the counting box and prepare number buttons
-  buildCountBox(food, correctCount);
-  buildNumberButtons(correctCount);
-}
-
-/* Create and place food emoji items inside the count box */
-function buildCountBox(food, n) {
-  const box = document.getElementById('countBox');
-  box.innerHTML = '';
-
-  // Wait one animation frame so the box has its rendered dimensions
-  requestAnimationFrame(() => {
-    const w = box.clientWidth;
-    const h = box.clientHeight;
-
-    // Size each item relative to the box and quantity
-    const baseSize = Math.min(w, h) / (n <= 2 ? 3.0 : n <= 3 ? 3.6 : 4.4);
-    const itemSize = Math.max(50, Math.min(baseSize, 86));   // clamp 50–86 px
-    const itemRadius = itemSize / 2;
-
-    const positions = layoutItems(n, w, h, itemRadius, 16);
-
-    positions.forEach(pos => {
-      const item = document.createElement('div');
-      item.className = 'food-item';
-      item.style.cssText = `
-        width:     ${itemSize}px;
-        height:    ${itemSize}px;
-        font-size: ${itemSize * 0.72}px;
-        left:      ${pos.x - itemRadius}px;
-        top:       ${pos.y - itemRadius}px;
-      `;
-
-      // Yellow glow circle (shown on tap)
-      const glow = document.createElement('div');
-      glow.className = 'tap-glow';
-
-      // Emoji
-      const emoji = document.createElement('div');
-      emoji.className = 'food-emoji';
-      emoji.textContent = food.emoji;
-
-      item.appendChild(glow);   // behind emoji
-      item.appendChild(emoji);
-
-      item.addEventListener('pointerdown', () => tapItem(item));
-      box.appendChild(item);
-    });
-  });
-}
-
-/* Player taps a food item */
-function tapItem(item) {
-  if (item.classList.contains('tapped') || answering) return;
-
-  playTap();
-  item.classList.add('tapped');   // reveals yellow glow via CSS transition
-  tappedCount++;
-
-  // Once all items are tapped, reveal the number buttons
-  if (tappedCount >= correctCount) {
-    showNumberButtons();
+  if (state.round >= state.totalRounds) {
+    showResult();
+    return;
   }
+
+  state.round++;
+  generateRound();
+  renderGame();
 }
 
-/* Build hidden number buttons 1–MAX_QUANTITY */
-function buildNumberButtons(answer) {
-  const row = document.getElementById('numberRow');
-  row.innerHTML = '';
+function showResult() {
+  const score = state.score;
+  const total = state.totalRounds;
+  document.getElementById('finalScore').textContent = `${score}`;
+  document.getElementById('resultSub').textContent = `out of ${total} correct`;
 
-  for (let i = 1; i <= MAX_QUANTITY; i++) {
-    const btn = document.createElement('button');
-    btn.className = 'num-btn';
-    btn.textContent = i;
-    btn.dataset.val = i;
-    btn.addEventListener('pointerdown', () => checkAnswer(btn, i, answer));
-    row.appendChild(btn);
-  }
+  let trophy = '🏆', title = 'AMAZING!', stars = '⭐⭐⭐';
+  if (score >= 9)       { trophy = '🏆'; title = 'AMAZING!';   stars = '⭐⭐⭐'; }
+  else if (score >= 7)  { trophy = '🥈'; title = 'GREAT JOB!'; stars = '⭐⭐'; }
+  else if (score >= 5)  { trophy = '🥉'; title = 'GOOD WORK!'; stars = '⭐'; }
+  else                  { trophy = '💪'; title = 'KEEP TRYING!'; stars = '🔄'; }
+
+  document.getElementById('resultTrophy').textContent = trophy;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultStars').textContent = stars;
+
+  showScreen('resultScreen');
+  if (score >= 5) spawnParticles(true);
 }
 
-/* Make all five number buttons appear simultaneously */
-function showNumberButtons() {
-  answering = true;
-  document.querySelectorAll('.num-btn').forEach(btn => {
-    btn.classList.add('visible');
-  });
+function restartGame() {
+  startGame();
 }
 
-/* Player taps a number button */
-function checkAnswer(btn, chosen, correct) {
-  if (!answering) return;
-
-  if (chosen === correct) {
-    // ✅ Correct
-    answering = false;
-    playCorrect();
-
-    // Brief green highlight on the correct button
-    btn.classList.add('correct');
-
-    currentRound++;
-    updateProgress();
-
-    isTransitioning = true;
-    setTimeout(() => {
-      isTransitioning = false;
-      if (currentRound >= TOTAL_ROUNDS) {
-        endGame();
-      } else {
-        nextRound();
-      }
-    }, 850);
-
-  } else {
-    // ❌ Wrong — gentle shake only, no colour change, no sound
-    btn.classList.remove('wrong');
-    void btn.offsetWidth;          // force reflow to restart animation
-    btn.classList.add('wrong');
-    btn.addEventListener('animationend', () => btn.classList.remove('wrong'), { once: true });
-  }
-}
-
-/* All rounds done */
-function endGame() {
-  const msg = document.getElementById('winMsg');
-  if (msg) msg.innerHTML = `You counted all ${TOTAL_ROUNDS} rounds!<br>Noodle is SO proud of you! 🌈`;
-  playWinTune();
-  spawnConfetti();
-  showScreen('winScreen');
-}
-
-/* ================================================
-   CONFETTI — gentle, not overwhelming
-   ================================================ */
-function spawnConfetti() {
-  const colors = ['#FFD93D','#FF8C42','#6BCB77','#4EC9F0','#9B5DE5','#FF9EC4','#FFFFFF'];
-  for (let i = 0; i < 55; i++) {
-    setTimeout(() => {
-      const el = document.createElement('div');
-      el.className = 'confetti-piece';
-      const size = 7 + Math.random() * 7;
-      el.style.cssText = `
-        left: ${Math.random() * 100}vw;
-        top: -16px;
-        width: ${size}px;
-        height: ${size * (1.2 + Math.random())}px;
-        background: ${colors[Math.floor(Math.random() * colors.length)]};
-        border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-        animation-duration: ${2 + Math.random() * 2}s;
-      `;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 4200);
-    }, i * 40);
-  }
-}
-
-/* ================================================
-   KEYBOARD SUPPORT  (1–5 to answer; Enter to start)
-   ================================================ */
-document.addEventListener('keydown', e => {
-  const n = parseInt(e.key);
-  if (n >= 1 && n <= 5 && answering) {
-    const btn = document.querySelector(`.num-btn[data-val="${n}"]`);
-    if (btn) checkAnswer(btn, n, correctCount);
-  }
-  if (e.key === 'Enter') {
-    const ss = document.getElementById('startScreen');
-    if (!ss.classList.contains('hidden')) startGame();
-  }
+// ===================================================
+// INIT
+// ===================================================
+window.addEventListener('DOMContentLoaded', async () => {
+  await preloadAssets();
+  showScreen('startScreen');
 });
-
-/* Unlock AudioContext on first interaction */
-document.addEventListener('pointerdown', () => { if (!audioCtx) getCtx(); }, { once: true });
-
-/* Initialise slider track fills once DOM is ready */
-document.addEventListener('DOMContentLoaded', initSliders);
 </script>
 </body>
 </html>
