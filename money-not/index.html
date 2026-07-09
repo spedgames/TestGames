@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Spot the Money! | A Coin-Spotting Game</title>
+
+<!-- Poppins font, per brief -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  /* ==========================================================================
+     DESIGN TOKENS
+     A small, deliberate palette themed around a bank "vault display case":
+     deep navy/teal glass, warm coin gold, mint for correct, coral for incorrect.
+     ========================================================================== */
+  :root{
+    --ink-navy:      #16213E;   /* deepest background */
+    --teal-deep:     #0F3D3E;   /* background gradient partner */
+    --glass:         #1F3A5F;   /* card / slot surface on dark */
+    --glass-light:   #2A4A73;   /* lighter slot surface */
+    --cloud:         #F7F9FB;   /* light text / light surfaces */
+    --slate:         #9FB0C9;   /* secondary text on dark */
+    --coin-gold:     #F4B942;   /* primary accent / CTA */
+    --coin-gold-dark:#D89A1E;
+    --mint:          #3DDC97;   /* correct feedback */
+    --mint-dark:     #1FAE73;
+    --coral:         #FF6B6B;   /* incorrect feedback */
+    --coral-dark:    #E24C4C;
+
+    --radius-lg: 1.5rem;
+    --radius-md: 1rem;
+    --radius-sm: 0.6rem;
+
+    --shadow-soft: 0 0.6rem 1.6rem rgba(0,0,0,0.28);
+    --shadow-pop:  0 0.3rem 0.8rem rgba(0,0,0,0.35);
+
+    --touch-min: 44px;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden; /* game must fit viewport, no page scroll */
+    background:
+      radial-gradient(circle at 15% 10%, rgba(244,185,66,0.08), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(61,220,151,0.07), transparent 45%),
+      linear-gradient(160deg, var(--ink-navy) 0%, var(--teal-deep) 100%);
+    font-family:'Poppins', 'Segoe UI', sans-serif;
+    color:var(--cloud);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #app{
+    position:relative;
+    width:100%;
+    height:100dvh; /* dynamic viewport height for mobile browser chrome */
+    height:100vh;  /* fallback */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Decorative floating coins in the background — purely ambient, low opacity */
+  .bg-coin{
+    position:absolute;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #ffe29a, var(--coin-gold) 60%, var(--coin-gold-dark) 100%);
+    opacity:0.10;
+    filter:blur(0.5px);
+    animation: floatCoin 14s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .bg-coin{ animation:none; }
+  }
+  @keyframes floatCoin{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-2.2rem) rotate(15deg); }
+  }
+
+  /* ==========================================================================
+     SCREENS — only one is shown at a time via .active
+     ========================================================================== */
+  .screen{
+    position:absolute;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: clamp(0.75rem, 3vh, 2rem) clamp(1rem, 4vw, 2.5rem);
+    text-align:center;
+  }
+  .screen.active{ display:flex; }
+
+  /* Fade/scale transition between screens */
+  .screen{ animation: screenIn 0.45s ease; }
+  @keyframes screenIn{
+    from{ opacity:0; transform:scale(0.97); }
+    to{ opacity:1; transform:scale(1); }
+  }
+
+  /* ==========================================================================
+     SHARED ELEMENTS
+     ========================================================================== */
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+    font-size: clamp(0.7rem, 1.6vw, 0.85rem);
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    font-weight:600;
+    color:var(--coin-gold);
+    margin-bottom:0.6rem;
+  }
+
+  h1.title{
+    font-size: clamp(1.6rem, 5.5vw, 2.9rem);
+    font-weight:800;
+    margin: 0 0 0.4rem 0;
+    letter-spacing:-0.01em;
+  }
+  h1.title .accent{ color:var(--coin-gold); }
+
+  p.subtitle{
+    font-size: clamp(0.85rem, 2.4vw, 1.1rem);
+    color:var(--slate);
+    max-width: 34rem;
+    margin: 0 0 clamp(1rem, 3vh, 1.8rem) 0;
+    line-height:1.5;
+  }
+
+  .card{
+    background: linear-gradient(180deg, var(--glass-light), var(--glass));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: clamp(1.2rem, 3.5vh, 2.2rem) clamp(1.2rem, 4vw, 2.5rem);
+  }
+
+  /* Buttons ------------------------------------------------------------- */
+  .btn{
+    font-family:inherit;
+    font-weight:600;
+    font-size: clamp(0.85rem, 2.2vw, 1rem);
+    border:none;
+    border-radius: 999px;
+    padding: 0.85rem 1.8rem;
+    min-height: var(--touch-min);
+    cursor:pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    touch-action: manipulation;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .btn:focus-visible{ outline:3px solid var(--coin-gold); outline-offset:3px; }
+
+  .btn-primary{
+    background: linear-gradient(180deg, #ffd76a, var(--coin-gold));
+    color:#3B2704;
+    box-shadow: 0 0.5rem 1.1rem rgba(244,185,66,0.35);
+  }
+  .btn-primary:hover{ filter:brightness(1.06); }
+  .btn-primary:disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  .btn-ghost{
+    background: rgba(255,255,255,0.06);
+    color: var(--cloud);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  .btn-ghost:hover{ background: rgba(255,255,255,0.12); }
+
+  /* Trial-count selector pills ------------------------------------------ */
+  .trial-select{
+    display:flex;
+    gap: clamp(0.6rem, 2vw, 1rem);
+    margin: 0.4rem 0 clamp(1.2rem, 3.5vh, 2rem) 0;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .trial-pill{
+    font-family:inherit;
+    font-weight:700;
+    font-size: clamp(0.95rem, 2.6vw, 1.2rem);
+    min-width: 5.4rem;
+    min-height: var(--touch-min);
+    padding: 0.7rem 1.1rem;
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.12);
+    color: var(--cloud);
+    cursor:pointer;
+    transition: all 0.18s ease;
+    touch-action: manipulation;
+  }
+  .trial-pill .n{ display:block; font-size:1.3em; line-height:1.1; }
+  .trial-pill .lbl{ display:block; font-size:0.6em; color:var(--slate); font-weight:500; letter-spacing:0.04em; }
+  .trial-pill:hover{ border-color: rgba(244,185,66,0.5); }
+  .trial-pill.selected{
+    background: linear-gradient(180deg, rgba(244,185,66,0.22), rgba(244,185,66,0.10));
+    border-color: var(--coin-gold);
+    box-shadow: 0 0.4rem 1rem rgba(244,185,66,0.25);
+  }
+  .trial-pill.selected .lbl{ color: var(--coin-gold); }
+  .trial-pill:focus-visible{ outline:3px solid var(--coin-gold); outline-offset:2px; }
+
+  .howto{
+    display:flex;
+    gap: clamp(0.8rem, 3vw, 2rem);
+    margin-top: clamp(0.6rem, 2vh, 1.2rem);
+    flex-wrap:wrap;
+    justify-content:center;
+    color:var(--slate);
+    font-size: clamp(0.72rem, 1.8vw, 0.85rem);
+  }
+  .howto span{ display:flex; align-items:center; gap:0.4rem; }
+
+  /* ==========================================================================
+     GAME SCREEN
+     ========================================================================== */
+  #screen-game{ justify-content:flex-start; padding-top: clamp(0.6rem, 2.5vh, 1.4rem); }
+
+  .game-topbar{
+    width:100%;
+    max-width:52rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:0.8rem;
+    margin-bottom: clamp(0.6rem, 2vh, 1.2rem);
+  }
+
+  .quit-btn{
+    width:2.6rem; height:2.6rem;
+    min-width:var(--touch-min); min-height:var(--touch-min);
+    border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    color:var(--cloud);
+    font-size:1.1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    touch-action: manipulation;
+  }
+  .quit-btn:hover{ background: rgba(255,107,107,0.18); border-color: var(--coral); }
+
+  .round-info{
+    font-weight:600;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    color:var(--slate);
+  }
+  .round-info b{ color:var(--cloud); }
+
+  .score-chip{
+    display:flex; align-items:center; gap:0.4rem;
+    background: rgba(244,185,66,0.12);
+    border:1px solid rgba(244,185,66,0.3);
+    border-radius:999px;
+    padding: 0.4rem 0.9rem;
+    font-weight:700;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    color: var(--coin-gold);
+    min-height: 2.2rem;
+  }
+
+  /* Coin meter — the game's signature element: fills with coins as you score */
+  .coin-meter{
+    width:100%;
+    max-width:52rem;
+    display:flex;
+    gap: clamp(0.25rem, 1.2vw, 0.5rem);
+    margin-bottom: clamp(0.8rem, 2.5vh, 1.4rem);
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .coin-pip{
+    width: clamp(0.8rem, 2.4vw, 1.15rem);
+    height: clamp(0.8rem, 2.4vw, 1.15rem);
+    border-radius:50%;
+    background: rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.14);
+    transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .coin-pip.earned{
+    background: radial-gradient(circle at 35% 30%, #ffe29a, var(--coin-gold) 65%, var(--coin-gold-dark));
+    border-color: transparent;
+    box-shadow: 0 0 0.5rem rgba(244,185,66,0.6);
+    transform: scale(1.15);
+  }
+  .coin-pip.missed{
+    background: rgba(255,107,107,0.28);
+    border-color: rgba(255,107,107,0.4);
+  }
+
+  /* Feedback banner --------------------------------------------------- */
+  .feedback-banner{
+    position:relative;
+    min-height: 2.6rem;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    font-size: clamp(0.95rem, 2.6vw, 1.3rem);
+    margin-bottom: clamp(0.3rem, 1.5vh, 0.6rem);
+    opacity:0;
+    transform: translateY(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .feedback-banner.show{ opacity:1; transform:translateY(0); }
+  .feedback-banner.correct{ color: var(--mint); }
+  .feedback-banner.incorrect{ color: var(--coral); }
+
+  /* Item display case --------------------------------------------------- */
+  .vault{
+    width:100%;
+    max-width:52rem;
+    flex:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .item-grid{
+    width:100%;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap: clamp(1rem, 4vw, 2.2rem) clamp(1.2rem, 4.5vw, 2.6rem);
+  }
+
+  .item-slot{
+    /* sized so all 4 items sit in a single row on wide screens, and wrap to a
+       tidy 2x2 grid on narrower tablet/phone widths */
+    flex: 0 0 clamp(5.6rem, 24vw, 10.5rem);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0.4rem;
+  }
+
+  .item-btn{
+    width: clamp(5.6rem, 24vw, 10.5rem);
+    height: clamp(5.6rem, 24vw, 10.5rem);
+    min-width: var(--touch-min);
+    min-height: var(--touch-min);
+    border-radius: var(--radius-md);
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 2px solid rgba(255,255,255,0.14);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), var(--shadow-pop);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0.6rem;
+    transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    touch-action: manipulation;
+    position:relative;
+    overflow:hidden;
+  }
+  .item-btn:hover{ transform: translateY(-3px); border-color: rgba(244,185,66,0.4); }
+  .item-btn:active{ transform: scale(0.95); }
+  .item-btn:focus-visible{ outline:3px solid var(--coin-gold); outline-offset:3px; }
+
+  .item-btn img, .item-btn .fallback-emoji{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    pointer-events:none;
+    user-select:none;
+  }
+  .item-btn .fallback-emoji{
+    font-size: clamp(2rem, 9vw, 3.4rem);
+    line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .item-btn[disabled]{ cursor:default; }
+
+  .item-btn.is-correct{
+    border-color: var(--mint);
+    box-shadow: 0 0 0 3px rgba(61,220,151,0.35), 0 0 1.4rem rgba(61,220,151,0.45);
+    animation: pulseCorrect 0.6s ease;
+  }
+  .item-btn.is-incorrect{
+    border-color: var(--coral);
+    box-shadow: 0 0 0 3px rgba(255,107,107,0.35);
+    animation: shakeWrong 0.45s ease;
+  }
+  .item-btn.is-dimmed{ opacity:0.45; }
+
+  @keyframes pulseCorrect{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.12); }
+    100%{ transform:scale(1); }
+  }
+  @keyframes shakeWrong{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-6px); }
+    40%{ transform:translateX(6px); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(4px); }
+  }
+
+  /* Coin burst particles for a correct tap ------------------------------ */
+  .burst-coin{
+    position:fixed;
+    width:0.9rem; height:0.9rem;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #ffe29a, var(--coin-gold) 65%, var(--coin-gold-dark));
+    pointer-events:none;
+    z-index:50;
+    animation: burstFly 0.85s ease-out forwards;
+  }
+  @keyframes burstFly{
+    0%{ transform: translate(0,0) scale(1); opacity:1; }
+    100%{ transform: translate(var(--dx), var(--dy)) scale(0.4); opacity:0; }
+  }
+
+  /* ==========================================================================
+     END SCREEN
+     ========================================================================== */
+  .end-icon{
+    font-size: clamp(3rem, 10vw, 4.5rem);
+    margin-bottom:0.3rem;
+    animation: popIn 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn{
+    from{ transform:scale(0); opacity:0; }
+    to{ transform:scale(1); opacity:1; }
+  }
+  .end-score{
+    font-size: clamp(2.2rem, 8vw, 3.6rem);
+    font-weight:800;
+    color: var(--coin-gold);
+    margin: 0.2rem 0;
+  }
+  .end-score span{ font-size:0.5em; color:var(--slate); font-weight:600; }
+  .end-message{
+    font-size: clamp(0.9rem, 2.6vw, 1.15rem);
+    color: var(--cloud);
+    margin-bottom: clamp(1rem, 3vh, 1.6rem);
+    max-width: 30rem;
+  }
+  .end-actions{
+    display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center;
+  }
+
+  /* Sound toggle ---------------------------------------------------------*/
+  .sound-toggle{
+    position:absolute;
+    top: clamp(0.6rem, 2vh, 1.2rem);
+    right: clamp(0.6rem, 2vw, 1.2rem);
+    width:2.6rem; height:2.6rem;
+    min-width:var(--touch-min); min-height:var(--touch-min);
+    border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    color:var(--cloud);
+    font-size:1.1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    z-index:5;
+    touch-action: manipulation;
+  }
+  .sound-toggle:hover{ background: rgba(255,255,255,0.12); }
+
+  /* Small screens -------------------------------------------------------- */
+  @media (max-height: 480px){
+    .howto{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Ambient decorative coins (purely visual, aria-hidden) -->
+  <div class="bg-coin" style="width:3.4rem;height:3.4rem;top:8%;left:6%;" aria-hidden="true"></div>
+  <div class="bg-coin" style="width:2.2rem;height:2.2rem;top:74%;left:12%;animation-delay:2s;" aria-hidden="true"></div>
+  <div class="bg-coin" style="width:2.8rem;height:2.8rem;top:18%;left:88%;animation-delay:4s;" aria-hidden="true"></div>
+  <div class="bg-coin" style="width:2rem;height:2rem;top:80%;left:85%;animation-delay:6s;" aria-hidden="true"></div>
+
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+
+  <!-- ================= START SCREEN ================= -->
+  <section class="screen active" id="screen-start" aria-labelledby="startTitle">
+    <div class="eyebrow">🪙 A Coin-Spotting Challenge</div>
+    <h1 class="title" id="startTitle">Spot the <span class="accent">Money!</span></h1>
+    <p class="subtitle">Four items appear on the shelf. Only one is real money. Tap it as fast — and as accurately — as you can!</p>
+
+    <div class="card">
+      <p style="margin:0 0 0.8rem 0; font-weight:600; color:var(--slate); font-size:clamp(0.8rem,2vw,0.95rem);">How many rounds do you want to play?</p>
+      <div class="trial-select" role="group" aria-label="Choose number of rounds">
+        <button class="trial-pill" data-trials="5" type="button">
+          <span class="n">5</span><span class="lbl">rounds</span>
+        </button>
+        <button class="trial-pill selected" data-trials="10" type="button">
+          <span class="n">10</span><span class="lbl">rounds</span>
+        </button>
+        <button class="trial-pill" data-trials="15" type="button">
+          <span class="n">15</span><span class="lbl">rounds</span>
+        </button>
+      </div>
+      <button class="btn btn-primary" id="startBtn" type="button" style="width:100%;">Start Game</button>
+    </div>
+
+    <div class="howto">
+      <span>👆 Tap the item that is money</span>
+      <span>⌨️ Or use Tab + Enter</span>
+      <span>⚡ One tap per round</span>
+    </div>
+  </section>
+
+  <!-- ================= GAME SCREEN ================= -->
+  <section class="screen" id="screen-game" aria-labelledby="gameLive">
+    <div class="game-topbar">
+      <button class="quit-btn" id="quitBtn" type="button" aria-label="Quit to start screen" title="Quit">✕</button>
+      <div class="round-info">Round <b id="roundNow">1</b> / <span id="roundTotal">10</span></div>
+      <div class="score-chip">🏆 <span id="scoreNow">0</span></div>
+    </div>
+
+    <div class="coin-meter" id="coinMeter" aria-hidden="true"></div>
+
+    <div class="feedback-banner" id="feedbackBanner" role="status" aria-live="polite"></div>
+
+    <div class="vault">
+      <div class="item-grid" id="itemGrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= END SCREEN ================= -->
+  <section class="screen" id="screen-end" aria-labelledby="endTitle">
+    <div class="end-icon" id="endIcon">🏆</div>
+    <div class="eyebrow" id="endTitle">Results</div>
+    <div class="end-score"><span id="endScoreNum">0</span> <span>/ <span id="endScoreTotal">10</span></span></div>
+    <p class="end-message" id="endMessage">Great job spotting the money!</p>
+    <div class="end-actions">
+      <button class="btn btn-ghost" id="changeRoundsBtn" type="button">Change Rounds</button>
+      <button class="btn btn-primary" id="playAgainBtn" type="button">Play Again</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================================
+   SPOT THE MONEY — GAME LOGIC
+   ----------------------------------------------------------------------------
+   HOW ASSETS WORK
+   Drop your images into an "assets" folder next to this HTML file.
+   - Non-money items: named "notmoney" + a number, e.g. notmoney1.png, notmoney2.jpg
+   - Money items: any filename containing "dollar", "dollars", or "cents",
+     e.g. dollar1.png, fivedollars.png, 50cents.png
+
+   You do NOT need to edit any game logic. Just list your filenames in the
+   ASSET_FILES array below (STEP 1). The game automatically figures out which
+   ones are money vs. not-money by checking the filename for "dollar"/"cents".
+
+   If an image fails to load (e.g. you haven't added it yet), the game shows
+   a friendly emoji placeholder instead, so you can always test the game.
+
+   Each round shows 4 items total: 1 money item + 3 not-money items.
+   ============================================================================ */
+
+  // ---- STEP 1: list every asset filename here (path is relative to this file) ----
+  const ASSET_FILES = [
+    // Non-money items — swap/add as many as you like
+    "assets/notmoney1.jpg",
+    "assets/notmoney2.jpg",
+    "assets/notmoney3.jpg",
+    "assets/notmoney4.jpg",
+    "assets/notmoney5.jpg",
+    // Money items — must contain "dollar", "dollars", or "cents"
+    "assets/dollars(1).png",
+    "assets/dollars(2).png",
+    "assets/cents(3).png",
+    "assets/dollar(4).png",
+    "assets/cents(1).png",
+    "assets/dollars(3).png",
+    "assets/cents(2).png",
+    "assets/cents(4).png",
+  ];
+
+  // Emoji fallbacks shown automatically if an image file can't be found,
+  // so the game is always playable while you're still adding real art.
+  const FALLBACK_NOTMONEY = ["📦","🎈","📚","🧸","🍎","⚽","🎨","🧦","🖊️","🪁"];
+  const FALLBACK_MONEY   = ["💵","💵","💵","🪙","💰"];
+
+  /** A file counts as "money" if its name contains dollar / dollars / cents. */
+  function isMoneyFile(path){
+    const name = path.toLowerCase();
+    return name.includes("dollar") || name.includes("cents");
+  }
+
+  // Build the two pools from the manifest above.
+  const MONEY_POOL    = ASSET_FILES.filter(isMoneyFile);
+  const NOTMONEY_POOL = ASSET_FILES.filter(f => !isMoneyFile(f));
+
+  // ---------------------------------------------------------------------------
+  // STATE
+  // ---------------------------------------------------------------------------
+  const state = {
+    totalRounds: 10,
+    round: 0,          // current round number (1-indexed once playing)
+    score: 0,
+    results: [],       // true/false per round, for the coin meter
+    locked: false,     // true while feedback is showing (prevents double taps)
+    soundOn: true,
+    roundTimeoutId: null,
+  };
+
+  // ---------------------------------------------------------------------------
+  // DOM REFERENCES
+  // ---------------------------------------------------------------------------
+  const screens = {
+    start: document.getElementById('screen-start'),
+    game:  document.getElementById('screen-game'),
+    end:   document.getElementById('screen-end'),
+  };
+
+  const trialPills   = document.querySelectorAll('.trial-pill');
+  const startBtn     = document.getElementById('startBtn');
+  const quitBtn      = document.getElementById('quitBtn');
+  const roundNowEl   = document.getElementById('roundNow');
+  const roundTotalEl = document.getElementById('roundTotal');
+  const scoreNowEl   = document.getElementById('scoreNow');
+  const coinMeterEl  = document.getElementById('coinMeter');
+  const feedbackEl   = document.getElementById('feedbackBanner');
+  const itemGridEl   = document.getElementById('itemGrid');
+  const soundToggle  = document.getElementById('soundToggle');
+
+  const endIcon        = document.getElementById('endIcon');
+  const endScoreNum    = document.getElementById('endScoreNum');
+  const endScoreTotal  = document.getElementById('endScoreTotal');
+  const endMessage     = document.getElementById('endMessage');
+  const playAgainBtn   = document.getElementById('playAgainBtn');
+  const changeRoundsBtn= document.getElementById('changeRoundsBtn');
+
+  // ---------------------------------------------------------------------------
+  // SCREEN NAVIGATION
+  // ---------------------------------------------------------------------------
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  // ---------------------------------------------------------------------------
+  // START SCREEN — trial-count selector
+  // ---------------------------------------------------------------------------
+  trialPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      trialPills.forEach(p => p.classList.remove('selected'));
+      pill.classList.add('selected');
+      state.totalRounds = parseInt(pill.dataset.trials, 10);
+    });
+  });
+
+  startBtn.addEventListener('click', startGame);
+  playAgainBtn.addEventListener('click', startGame);
+  changeRoundsBtn.addEventListener('click', () => showScreen('start'));
+  quitBtn.addEventListener('click', () => {
+    clearTimeout(state.roundTimeoutId);
+    showScreen('start');
+  });
+
+  soundToggle.addEventListener('click', () => {
+    state.soundOn = !state.soundOn;
+    soundToggle.textContent = state.soundOn ? '🔊' : '🔇';
+  });
+
+  // ---------------------------------------------------------------------------
+  // TINY SYNTHESIZED SOUND EFFECTS (no audio files needed)
+  // ---------------------------------------------------------------------------
+  let audioCtx = null;
+  function playTone(freq, duration, type){
+    if (!state.soundOn) return;
+    try{
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.14, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }catch(e){ /* Web Audio unsupported — fail silently */ }
+  }
+  function playCorrectSound(){ playTone(880, 0.12, 'triangle'); setTimeout(() => playTone(1320, 0.18, 'triangle'), 90); }
+  function playWrongSound(){ playTone(180, 0.28, 'sawtooth'); }
+
+  // ---------------------------------------------------------------------------
+  // GAME START
+  // ---------------------------------------------------------------------------
+  function startGame(){
+    state.round = 0;
+    state.score = 0;
+    state.results = [];
+    state.locked = false;
+    clearTimeout(state.roundTimeoutId);
+
+    roundTotalEl.textContent = state.totalRounds;
+    scoreNowEl.textContent = '0';
+    buildCoinMeter();
+    showScreen('game');
+    nextRound();
+  }
+
+  function buildCoinMeter(){
+    coinMeterEl.innerHTML = '';
+    for (let i = 0; i < state.totalRounds; i++){
+      const pip = document.createElement('div');
+      pip.className = 'coin-pip';
+      coinMeterEl.appendChild(pip);
+    }
+  }
+
+  function updateCoinMeter(){
+    const pips = coinMeterEl.children;
+    state.results.forEach((wasCorrect, i) => {
+      pips[i].classList.toggle('earned', wasCorrect);
+      pips[i].classList.toggle('missed', !wasCorrect);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // ROUND SETUP
+  // ---------------------------------------------------------------------------
+  function pickRandom(arr, count){
+    const copy = [...arr];
+    const picked = [];
+    while (picked.length < count && copy.length){
+      const i = Math.floor(Math.random() * copy.length);
+      picked.push(copy.splice(i, 1)[0]);
+    }
+    return picked;
+  }
+
+  function nextRound(){
+    if (state.round >= state.totalRounds){
+      endGame();
+      return;
+    }
+    state.round++;
+    state.locked = false;
+    roundNowEl.textContent = state.round;
+    feedbackEl.classList.remove('show', 'correct', 'incorrect');
+    feedbackEl.textContent = '';
+
+    // One money item, three not-money items, shuffled together (4 items total).
+    const moneyItem   = pickRandom(MONEY_POOL.length ? MONEY_POOL : ['__fallback_money__'], 1)[0];
+    const notMoneyPad = NOTMONEY_POOL.length ? NOTMONEY_POOL : ['__fallback_notmoney__'];
+    const notMoneyItems = pickRandom(notMoneyPad, Math.min(3, notMoneyPad.length));
+    // Pad with repeats if the manifest has fewer than 3 not-money assets.
+    while (notMoneyItems.length < 3){
+      notMoneyItems.push(notMoneyPad[Math.floor(Math.random() * notMoneyPad.length)]);
+    }
+
+    const roundItems = pickRandom([moneyItem, ...notMoneyItems], 4); // shuffle positions
+    renderItems(roundItems, moneyItem);
+  }
+
+  function renderItems(items, moneyItem){
+    itemGridEl.innerHTML = '';
+    items.forEach((path) => {
+      const isMoney = path === moneyItem;
+
+      const slot = document.createElement('div');
+      slot.className = 'item-slot';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'item-btn';
+      btn.setAttribute('aria-label', isMoney ? 'This item — tap if you think it is money' : 'This item — tap if you think it is money');
+      btn.dataset.isMoney = isMoney ? '1' : '0';
+
+      const img = document.createElement('img');
+      img.src = path;
+      img.alt = '';
+      img.draggable = false;
+      img.onerror = () => {
+        // Graceful fallback: swap broken image for a friendly emoji.
+        img.remove();
+        const span = document.createElement('span');
+        span.className = 'fallback-emoji';
+        span.textContent = isMoney
+          ? FALLBACK_MONEY[Math.floor(Math.random() * FALLBACK_MONEY.length)]
+          : FALLBACK_NOTMONEY[Math.floor(Math.random() * FALLBACK_NOTMONEY.length)];
+        btn.appendChild(span);
+      };
+
+      btn.appendChild(img);
+      btn.addEventListener('click', (e) => onItemTap(btn, isMoney, e));
+      slot.appendChild(btn);
+      itemGridEl.appendChild(slot);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // HANDLE A TAP
+  // ---------------------------------------------------------------------------
+  function onItemTap(tappedBtn, isMoney, evt){
+    if (state.locked) return; // ignore extra taps while feedback is showing
+    state.locked = true;
+
+    const allBtns = itemGridEl.querySelectorAll('.item-btn');
+
+    if (isMoney){
+      state.score++;
+      state.results.push(true);
+      tappedBtn.classList.add('is-correct');
+      allBtns.forEach(b => { if (b !== tappedBtn) b.classList.add('is-dimmed'); });
+      showFeedback(true);
+      spawnCoinBurst(evt.clientX, evt.clientY);
+      playCorrectSound();
+    } else {
+      state.results.push(false);
+      tappedBtn.classList.add('is-incorrect');
+      // Reveal the correct one too, so it's a learning moment.
+      allBtns.forEach(b => {
+        if (b.dataset.isMoney === '1') b.classList.add('is-correct');
+        else if (b !== tappedBtn) b.classList.add('is-dimmed');
+      });
+      showFeedback(false);
+      playWrongSound();
+    }
+
+    scoreNowEl.textContent = state.score;
+    updateCoinMeter();
+    allBtns.forEach(b => b.disabled = true);
+
+    state.roundTimeoutId = setTimeout(nextRound, 1250);
+  }
+
+  function showFeedback(correct){
+    feedbackEl.textContent = correct ? '✓ Correct! That was the money.' : '✗ Not quite — here it is!';
+    feedbackEl.classList.remove('correct', 'incorrect');
+    feedbackEl.classList.add(correct ? 'correct' : 'incorrect', 'show');
+  }
+
+  // Small celebratory burst of coin particles from the tap point.
+  function spawnCoinBurst(x, y){
+    if (typeof x !== 'number') return; // keyboard activation has no coordinates
+    const count = 10;
+    for (let i = 0; i < count; i++){
+      const coin = document.createElement('div');
+      coin.className = 'burst-coin';
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+      const dist = 60 + Math.random() * 50;
+      coin.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      coin.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+      coin.style.left = `${x}px`;
+      coin.style.top = `${y}px`;
+      document.body.appendChild(coin);
+      setTimeout(() => coin.remove(), 900);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // END SCREEN
+  // ---------------------------------------------------------------------------
+  function endGame(){
+    const pct = Math.round((state.score / state.totalRounds) * 100);
+    endScoreNum.textContent = state.score;
+    endScoreTotal.textContent = state.totalRounds;
+
+    let icon, message;
+    if (pct === 100){
+      icon = '🏆'; message = "Perfect score! You're a certified Money Master!";
+    } else if (pct >= 70){
+      icon = '🌟'; message = 'Great job! You spotted the money almost every time.';
+    } else if (pct >= 40){
+      icon = '👍'; message = 'Nice effort! A little more practice and you\'ll spot it every round.';
+    } else {
+      icon = '💡'; message = "Keep practicing — look closely at each item before you tap!";
+    }
+    endIcon.textContent = icon;
+    endMessage.textContent = message;
+    showScreen('end');
+  }
+
+  // ---------------------------------------------------------------------------
+  // KEYBOARD: Enter/Space already trigger .click() on focused <button> elements
+  // natively, so no extra keyboard wiring is required — full keyboard support
+  // comes for free from using real <button> elements throughout.
+  // ---------------------------------------------------------------------------
+</script>
+</body>
+</html>
