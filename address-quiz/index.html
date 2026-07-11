@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Address Verification App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-hover: #4338CA;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --correct: #10B981;
+      --incorrect: #EF4444;
+      --highlight: #FEF08A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    
+    /* Lock the viewport completely */
+    body { 
+      background-color: var(--bg); 
+      color: var(--text); 
+      padding: 0.5rem; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      overflow: hidden;
+    }
+    
+    /* Fixed container size that won't spill over or grow scrollbars */
+    .container { 
+      width: 100%; 
+      max-width: 700px; 
+      height: 92vh;
+      max-height: 600px; /* Perfect ceiling height for laptops/iPads */
+      background: var(--card-bg); 
+      border-top: 10px solid var(--primary); 
+      border-radius: 12px; 
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+      padding: 1.5rem 2rem; 
+      position: relative; 
+      display: flex; 
+      flex-direction: column;
+      overflow: hidden; /* Hard block on main container scrollbars */
+    }
+
+    h1 { font-size: 1.45rem; font-weight: 700; margin-bottom: 0.15rem; }
+    .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+    .form-group { margin-bottom: 1rem; }
+    
+    /* Original Modern SaaS Select Dropdown Style */
+    select { 
+      width: 100%; 
+      padding: 0.85rem 1rem; 
+      font-size: 1rem; 
+      border: 2px solid var(--border); 
+      border-radius: 8px; 
+      background-color: #fff;
+      outline: none; 
+      cursor: pointer; 
+      transition: border-color 0.2s;
+    }
+    select:focus { border-color: var(--primary); }
+
+    /* Compact Horizontal Header Layout */
+    .question-header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+    label.title-label { display: block; font-weight: 600; font-size: 1.1rem; text-align: left; flex: 1; line-height: 1.4; }
+    
+    /* Slightly scaled-down pictogram to save valuable vertical room */
+    .picto-box img { width: 70px; height: 70px; object-fit: contain; border: 2px solid var(--border); border-radius: 10px; padding: 0.3rem; background: #fff; display: block; }
+
+    /* Visual Highlighting */
+    .highlight-word { background-color: var(--highlight); padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; color: #1E293B; }
+
+    /* Layout Selection Cards */
+    .options-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+    .option-card { display: flex; align-items: center; padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; min-height: 46px; }
+    .option-card:hover { background-color: #F1F5F9; border-color: var(--text-muted); }
+    .option-card input[type="radio"] { margin-right: 0.75rem; width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+    .option-card span { font-size: 1rem; }
+    .option-card.selected { border-color: var(--primary); background-color: #EEF2F6; }
+
+    /* Footer Pagination Navigation */
+    .nav-buttons { display: flex; gap: 1rem; margin-top: auto; padding-top: 1rem; }
+    button { background-color: var(--primary); color: white; border: none; padding: 0.75rem 2rem; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; flex: 1; transition: background-color 0.2s; }
+    button:hover { background-color: var(--primary-hover); }
+    button.secondary-btn { background-color: #E2E8F0; color: var(--text); }
+    button.secondary-btn:hover { background-color: #CBD5E1; }
+    button.accent-btn { background-color: #10B981; color: white; margin-top: 0.5rem; font-size: 0.85rem; padding: 0.5rem; }
+    button.accent-btn:hover { background-color: #059669; }
+    
+    .hidden { display: none !important; }
+
+    /* Admin Editor Drawer - Keeps scroll isolated internally */
+    .admin-panel { margin-top: 1rem; border: 2px dashed var(--border); padding: 0.75rem; border-radius: 8px; background: #F8FAFC; max-height: 220px; display: flex; flex-direction: column; }
+    .admin-title { font-weight: 600; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; padding-bottom: 0.25rem; }
+    .admin-title .symbol { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+    .admin-grid { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; overflow-y: auto; padding-right: 0.25rem; }
+    .admin-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem; align-items: center; }
+    .admin-row input { padding: 0.35rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; width: 100%; background: #fff; }
+
+    /* Results Summary - Scroll isolated internally */
+    .results-scroll { max-height: 280px; overflow-y: auto; padding-right: 0.25rem; margin-bottom: 0.5rem; }
+    .score-badge { font-size: 2.5rem; font-weight: 700; color: var(--primary); text-align: center; margin: 0.25rem 0; }
+    .review-item { padding: 0.85rem; border: 2px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
+    .review-item.correct-row { border-color: var(--correct); background-color: #F0FDF4; }
+    .review-item.incorrect-row { border-color: var(--incorrect); background-color: #FEF2F2; }
+    .review-title { font-weight: 600; margin-bottom: 0.25rem; font-size: 0.95rem; }
+    .txt-correct { color: var(--correct); font-weight: 600; }
+    .txt-incorrect { color: var(--incorrect); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Step 1: Launcher & Configuration -->
+    <div id="step-name">
+      <h1>Personal Information Quiz</h1>
+      <p class="subtitle">Select your name to start your custom address checkpoint.</p>
+      
+      <div class="form-group">
+        <label for="student-select" style="font-weight:600; margin-bottom:0.5rem; display:block;">Who is taking the test?</label>
+        <select id="student-select"></select>
+      </div>
+      
+      <button id="btn-start">Start Test</button>
+
+      <!-- Admin Config Panel -->
+      <div class="admin-panel">
+        <div class="admin-title" onclick="toggleAdmin()">
+          <span>⚙ Settings: Edit Student Data Directory</span>
+          <span id="admin-toggle-indicator" class="symbol">+</span>
+        </div>
+        <div id="admin-content" class="admin-grid hidden">
+          <div class="admin-row" style="font-weight:600; font-size:0.8rem; color:var(--text-muted); position: sticky; top: 0; background: #F8FAFC; padding-bottom: 4px;">
+            <div>Name</div><div>Block</div><div>Street</div><div>Unit</div><div>Postal</div>
+          </div>
+          <div id="admin-inputs-container"></div>
+          
+          <button id="btn-add-profile" class="accent-btn">＋ Add New Student Profile</button>
+          <button id="btn-save-data" style="font-size:0.85rem; padding:0.5rem; margin-top: 0.5rem; margin-bottom: 0.25rem;" class="secondary-btn">Apply & Save to Cache</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: One-Question Section Router -->
+    <div id="step-quiz" class="hidden">
+      <h1 id="quiz-header">Address Checkpoint</h1>
+      <p class="subtitle">Section <span id="current-section-idx">1</span> of 4</p>
+      
+      <div id="active-question-box"></div>
+      
+      <div class="nav-buttons">
+        <button id="btn-prev" class="secondary-btn hidden">Back</button>
+        <button id="btn-next-step">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Grade Report Summary -->
+    <div id="step-results" class="hidden">
+      <div style="text-align: center; margin-bottom: 1rem;">
+        <h1>Quiz Complete!</h1>
+        <div class="score-badge" id="score-display">0 / 4</div>
+        <p id="results-feedback" style="color: var(--text-muted); font-size: 0.95rem;"></p>
+      </div>
+
+      <div class="results-scroll" id="review-container"></div>
+      <button style="width: 100%;" onclick="window.location.reload()">Restart Dashboard</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'address_quiz_student_data';
+
+    const metaConfig = {
+      "Block Number": { iconId: 35655, highlight: "block number" },
+      "Street Name": { iconId: 2299, highlight: "street name" },
+      "Unit Number": { iconId: 3244, highlight: "unit number" },
+      "Postal Code": { iconId: 6464, highlight: "postal code" }
+    };
+    
+    const fields = ["Block Number", "Street Name", "Unit Number", "Postal Code"];
+
+    const defaultStudentData = [
+      { "Name": "Ad", "Block Number": "Blk 681A", "Street Name": "Woodlands Drive 62", "Unit Number": "#14-13", "Postal Code": "Singapore 731681" },
+      { "Name": "Iz", "Block Number": "Blk 306", "Street Name": "Woodlands Street 31", "Unit Number": "#02-29", "Postal Code": "Singapore 730306" },
+      { "Name": "Ha", "Block Number": "Blk 161A", "Street Name": "Jalan Teck Whye", "Unit Number": "#22-22", "Postal Code": "Singapore 681161" },
+      { "Name": "An", "Block Number": "Blk 126A", "Street Name": "Canberra Street", "Unit Number": "#06-775", "Postal Code": "Singapore 751126" },
+      { "Name": "Ni", "Block Number": "Blk 625A", "Street Name": "Woodlands Dr 52", "Unit Number": "#03-45", "Postal Code": "Singapore 731625" }
+    ];
+
+    let studentData = [];
+    let selectedStudent = null;
+    let currentFieldIdx = 0;
+    let studentAnswers = {}; 
+    let sectionData = [];    
+
+    function loadDataFromCache() {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (cached) {
+        try {
+          studentData = JSON.parse(cached);
+        } catch(e) {
+          studentData = [...defaultStudentData];
+        }
+      } else {
+        studentData = [...defaultStudentData];
+      }
+    }
+
+    function saveDataToCache() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(studentData));
+    }
+
+    function buildStudentDirectory() {
+      const selectEl = document.getElementById('student-select');
+      selectEl.innerHTML = '<option value="" disabled selected>Choose your name</option>';
+      
+      studentData.forEach(student => {
+        if(student.Name && student.Name.trim() !== "") {
+          const opt = document.createElement('option');
+          opt.value = student.Name;
+          opt.textContent = student.Name;
+          selectEl.appendChild(opt);
+        }
+      });
+
+      const adminContainer = document.getElementById('admin-inputs-container');
+      adminContainer.innerHTML = '';
+      studentData.forEach((student, index) => {
+        const row = document.createElement('div');
+        row.className = 'admin-row';
+        row.innerHTML = `
+          <input type="text" value="${student.Name || ''}" data-key="Name" data-idx="${index}" placeholder="Name">
+          <input type="text" value="${student["Block Number"] || ''}" data-key="Block Number" data-idx="${index}" placeholder="Block">
+          <input type="text" value="${student["Street Name"] || ''}" data-key="Street Name" data-idx="${index}" placeholder="Street">
+          <input type="text" value="${student["Unit Number"] || ''}" data-key="Unit Number" data-idx="${index}" placeholder="Unit">
+          <input type="text" value="${student["Postal Code"] || ''}" data-key="Postal Code" data-idx="${index}" placeholder="Postal">
+        `;
+        adminContainer.appendChild(row);
+      });
+    }
+
+    function toggleAdmin() {
+      const content = document.getElementById('admin-content');
+      const indicator = document.getElementById('admin-toggle-indicator');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        indicator.textContent = "−";
+      } else {
+        content.classList.add('hidden');
+        indicator.textContent = "+";
+      }
+    }
+
+    document.getElementById('btn-add-profile').addEventListener('click', () => {
+      const inputs = document.querySelectorAll('#admin-inputs-container input');
+      inputs.forEach(input => {
+        const idx = input.getAttribute('data-idx');
+        const key = input.getAttribute('data-key');
+        studentData[idx][key] = input.value;
+      });
+      studentData.push({ "Name": "", "Block Number": "", "Street Name": "", "Unit Number": "", "Postal Code": "" });
+      buildStudentDirectory();
+    });
+
+    document.getElementById('btn-save-data').addEventListener('click', () => {
+      const inputs = document.querySelectorAll('#admin-inputs-container input');
+      inputs.forEach(input => {
+        const idx = input.getAttribute('data-idx');
+        const key = input.getAttribute('data-key');
+        studentData[idx][key] = input.value;
+      });
+
+      studentData = studentData.filter(s => s.Name && s.Name.trim() !== "");
+
+      if (studentData.length === 0) {
+        alert("Directory must contain at least one valid name profile!");
+        studentData = [...defaultStudentData];
+      }
+
+      saveDataToCache();
+      buildStudentDirectory();
+      alert('Student entries committed and locked to persistent local storage memory cache!');
+    });
+
+    function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+    // Generates 4 unique options dynamically based on the current roster data
+    function prepareQuizSections() {
+      sectionData = [];
+      fields.forEach(field => {
+        const correctVal = selectedStudent[field];
+        let pool = [...new Set(studentData.map(s => s[field]).filter(v => v && v.trim() !== ""))];
+        let distractors = pool.filter(v => v !== correctVal);
+        shuffle(distractors);
+
+        let finalChoices = [correctVal];
+        for (let i = 0; i < 3 && i < distractors.length; i++) {
+          finalChoices.push(distractors[i]);
+        }
+        shuffle(finalChoices);
+        sectionData.push({ field: field, choices: finalChoices, correct: correctVal });
+      });
+    }
+
+    function renderCurrentQuestion() {
+      const current = sectionData[currentFieldIdx];
+      const config = metaConfig[current.field];
+      
+      document.getElementById('current-section-idx').textContent = currentFieldIdx + 1;
+      
+      if (currentFieldIdx === 0) {
+        document.getElementById('btn-prev').classList.add('hidden');
+      } else {
+        document.getElementById('btn-prev').classList.remove('hidden');
+      }
+
+      const nextBtn = document.getElementById('btn-next-step');
+      if (currentFieldIdx === fields.length - 1) {
+        nextBtn.textContent = "Submit Answers";
+      } else {
+        nextBtn.textContent = "Next";
+      }
+
+      const container = document.getElementById('active-question-box');
+      container.innerHTML = '';
+
+      const headerRow = document.createElement('div');
+      headerRow.className = 'question-header-row';
+
+      const pictoBox = document.createElement('div');
+      pictoBox.className = 'picto-box';
+      pictoBox.innerHTML = `<img src="https://api.arasaac.org/v1/pictograms/${config.iconId}" alt="${current.field} Icon">`;
+      headerRow.appendChild(pictoBox);
+
+      const label = document.createElement('label');
+      label.className = 'title-label';
+      label.innerHTML = `What is your correct <span class="highlight-word">${config.highlight}</span>?`;
+      headerRow.appendChild(label);
+
+      container.appendChild(headerRow);
+
+      const grid = document.createElement('div');
+      grid.className = 'options-grid';
+
+      current.choices.forEach(choice => {
+        const card = document.createElement('label');
+        card.className = 'option-card';
+        if (studentAnswers[current.field] === choice) {
+          card.classList.add('selected');
+        }
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = current.field;
+        radio.value = choice;
+        if (studentAnswers[current.field] === choice) radio.checked = true;
+
+        radio.addEventListener('change', () => {
+          grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          studentAnswers[current.field] = choice;
+        });
+
+        const span = document.createElement('span');
+        span.textContent = choice;
+
+        card.appendChild(radio);
+        card.appendChild(span);
+        grid.appendChild(card);
+      });
+
+      container.appendChild(grid);
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+      const name = document.getElementById('student-select').value;
+      if (!name) return alert('Select your name to begin the quiz session!');
+
+      selectedStudent = studentData.find(s => s.Name === name);
+      document.getElementById('quiz-header').textContent = `${selectedStudent.Name}'s Address Verification`;
+      
+      studentAnswers = {};
+      currentFieldIdx = 0;
+      
+      prepareQuizSections();
+      renderCurrentQuestion();
+
+      document.getElementById('step-name').classList.add('hidden');
+      document.getElementById('step-quiz').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      if (currentFieldIdx > 0) {
+        currentFieldIdx--;
+        renderCurrentQuestion();
+      }
+    });
+
+    document.getElementById('btn-next-step').addEventListener('click', () => {
+      const currentField = sectionData[currentFieldIdx].field;
+      
+      if (!studentAnswers[currentField]) {
+        return alert(`Please select an choice before continuing!`);
+      }
+
+      if (currentFieldIdx < fields.length - 1) {
+        currentFieldIdx++;
+        renderCurrentQuestion();
+      } else {
+        processEvaluationDashboard();
+      }
+    });
+
+    function processEvaluationDashboard() {
+      let score = 0;
+      const reviewContainer = document.getElementById('review-container');
+      reviewContainer.innerHTML = '';
+
+      fields.forEach(field => {
+        const targetSection = sectionData.find(s => s.field === field);
+        const chosen = studentAnswers[field];
+        const correct = targetSection.correct;
+        const isCorrect = (chosen === correct);
+
+        if (isCorrect) score++;
+
+        const item = document.createElement('div');
+        item.className = `review-item ${isCorrect ? 'correct-row' : 'incorrect-row'}`;
+        item.innerHTML = `
+          <div class="review-title">${field}: ${isCorrect ? '<span class="txt-correct">✓ Correct</span>' : '<span class="txt-incorrect">✗ Incorrect</span>'}</div>
+          <div style="font-size: 0.95rem; margin-top: 0.25rem;">
+            <p><strong>Chosen Answer:</strong> ${chosen}</p>
+            ${!isCorrect ? `<p style="margin-top:0.15rem;"><strong>Correct Verification:</strong> ${correct}</p>` : ''}
+          </div>
+        `;
+        reviewContainer.appendChild(item);
+      });
+
+      document.getElementById('score-display').textContent = `${score} / 4`;
+      document.getElementById('results-feedback').textContent = score === 4 ? "Perfect! Excellent job!" : "Review the correct verification details down below.";
+
+      document.getElementById('step-quiz').classList.add('hidden');
+      document.getElementById('step-results').classList.remove('hidden');
+    }
+
+    loadDataFromCache();
+    buildStudentDirectory();
+  </script>
+</body>
+</html>
