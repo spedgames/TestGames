@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Neon Drive — Controller</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+  :root{
+    --bg-deep:#170b2e;
+    --neon-cyan:#00f0ff;
+    --neon-magenta:#ff2e6c;
+    --sun-warm:#ffcc66;
+    --ink:#f5f0ff;
+    --ink-dim:#b8a9d9;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--bg-deep); overflow:hidden;
+    font-family:'Rajdhani',sans-serif; color:var(--ink);
+    touch-action:none;
+  }
+  #status{
+    position:fixed; inset:0; z-index:5;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+    background:radial-gradient(ellipse at 50% 30%, rgba(255,111,165,0.15), transparent 60%), var(--bg-deep);
+  }
+  #status.hidden{ display:none; }
+  .title{
+    font-size:clamp(24px,7vw,34px); letter-spacing:2px;
+    background:linear-gradient(90deg, var(--neon-cyan), var(--sun-warm));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    margin-bottom:10px; font-weight:700;
+  }
+  .msg{ font-size:16px; color:var(--ink-dim); letter-spacing:1px; }
+  .pulse{ animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  #controls{
+    position:fixed; inset:0; display:none;
+    grid-template-columns:1fr 1fr; gap:4px; padding:4px;
+    z-index:3;
+  }
+  #controls.active{ display:grid; }
+  .btn{
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(28px,10vw,52px); font-weight:700; letter-spacing:2px;
+    border-radius:20px;
+    transition:transform 0.08s ease, filter 0.08s ease;
+  }
+  #btnLeft{
+    background:linear-gradient(145deg, rgba(0,240,255,0.18), rgba(0,240,255,0.05));
+    border:2px solid rgba(0,240,255,0.6);
+    color:var(--neon-cyan);
+    box-shadow:inset 0 0 40px rgba(0,240,255,0.1);
+  }
+  #btnRight{
+    background:linear-gradient(145deg, rgba(255,46,108,0.18), rgba(255,46,108,0.05));
+    border:2px solid rgba(255,46,108,0.6);
+    color:var(--neon-magenta);
+    box-shadow:inset 0 0 40px rgba(255,46,108,0.1);
+  }
+  .btn.pressed{ filter:brightness(1.8); transform:scale(0.97); }
+
+  #gameover{
+    position:fixed; inset:0; z-index:4; display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    background:var(--bg-deep); text-align:center; padding:24px;
+  }
+  #gameover.active{ display:flex; }
+  .score{
+    font-size:clamp(40px,14vw,72px); color:var(--sun-warm); font-weight:700;
+    margin:4px 0 2px;
+  }
+  .best{ color:var(--ink-dim); font-size:15px; margin-bottom:26px; letter-spacing:1px;}
+  #restartBtn{
+    padding:18px 40px; font-size:20px; font-weight:700; letter-spacing:2px;
+    border-radius:14px; border:2px solid var(--neon-cyan); color:var(--neon-cyan);
+    background:rgba(0,240,255,0.1);
+  }
+  #restartBtn.pressed{ filter:brightness(1.8); transform:scale(0.97); }
+</style>
+</head>
+<body>
+
+<div id="status">
+  <div class="title">NEON DRIVE</div>
+  <div class="msg pulse" id="statusMsg">Connecting to game…</div>
+</div>
+
+<div id="controls">
+  <div class="btn" id="btnLeft">◀ LEFT</div>
+  <div class="btn" id="btnRight">RIGHT ▶</div>
+</div>
+
+<div id="gameover">
+  <div class="title">CRASHED</div>
+  <div class="score" id="finalScore">0</div>
+  <div class="best" id="bestScore">Best: 0</div>
+  <div id="restartBtn">TAP TO RESTART</div>
+</div>
+
+<script>
+var params = new URLSearchParams(window.location.search);
+var hostId = params.get('host');
+var statusMsg = document.getElementById('statusMsg');
+var controlsEl = document.getElementById('controls');
+var gameoverEl = document.getElementById('gameover');
+var statusEl = document.getElementById('status');
+
+function showScreen(which){
+  statusEl.classList.add('hidden');
+  controlsEl.classList.remove('active');
+  gameoverEl.classList.remove('active');
+  if(which === 'status') statusEl.classList.remove('hidden');
+  if(which === 'controls') controlsEl.classList.add('active');
+  if(which === 'gameover') gameoverEl.classList.add('active');
+}
+
+if(!hostId){
+  statusMsg.textContent = 'No game found. Scan the QR code shown on the screen.';
+} else {
+  var peer = new Peer();
+  var conn = null;
+
+  peer.on('open', function(){
+    conn = peer.connect(hostId, {reliable:true});
+
+    conn.on('open', function(){
+      statusMsg.textContent = 'Connected! Get ready…';
+    });
+
+    conn.on('data', function(msg){
+      if(!msg || !msg.type) return;
+      if(msg.type === 'state'){
+        if(msg.state === 'playing'){
+          showScreen('controls');
+        } else if(msg.state === 'gameover'){
+          document.getElementById('finalScore').textContent = msg.score;
+          document.getElementById('bestScore').textContent = 'Best: ' + msg.best;
+          showScreen('gameover');
+        } else if(msg.state === 'ready'){
+          showScreen('status');
+          statusMsg.textContent = 'Get ready…';
+        }
+      }
+    });
+
+    conn.on('close', function(){
+      statusMsg.textContent = 'Lost connection to game.';
+      showScreen('status');
+    });
+  });
+
+  peer.on('error', function(err){
+    console.error(err);
+    statusMsg.textContent = 'Connection error. Reopen this page from a fresh QR scan.';
+    showScreen('status');
+  });
+
+  function send(msg){
+    if(conn && conn.open){
+      try{ conn.send(msg); }catch(e){}
+    }
+  }
+
+  function bindHold(el, onDown, onUp){
+    el.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      el.classList.add('pressed');
+      onDown();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(evt){
+      el.addEventListener(evt, function(e){
+        el.classList.remove('pressed');
+        onUp();
+      });
+    });
+  }
+
+  var btnLeft = document.getElementById('btnLeft');
+  var btnRight = document.getElementById('btnRight');
+  bindHold(btnLeft,
+    function(){ send({type:'input', dir:'left', pressed:true}); },
+    function(){ send({type:'input', dir:'left', pressed:false}); }
+  );
+  bindHold(btnRight,
+    function(){ send({type:'input', dir:'right', pressed:true}); },
+    function(){ send({type:'input', dir:'right', pressed:false}); }
+  );
+
+  var restartBtn = document.getElementById('restartBtn');
+  restartBtn.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    restartBtn.classList.add('pressed');
+    send({type:'restart'});
+    setTimeout(function(){ restartBtn.classList.remove('pressed'); }, 150);
+  });
+}
+</script>
+</body>
+</html>
