@@ -2,514 +2,209 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Neon Drive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Turbo Dash — Controller</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
-    --bg-deep:#170b2e;
-    --bg-mid:#2c1250;
-    --sun-hot:#ff6fa5;
-    --sun-warm:#ffcc66;
-    --road:#140a24;
-    --neon-cyan:#00f0ff;
-    --neon-magenta:#ff2e6c;
-    --lane:#ffcf4d;
-    --ink:#f5f0ff;
-    --ink-dim:#b8a9d9;
+    --sky-top:#5c94fc;
+    --sky-bottom:#a7d4ff;
+    --player-red:#e52521;
+    --player-blue:#0058f8;
+    --coin:#fbd000;
+    --grass:#00a800;
+    --ink:#3a2a1a;
+    --ink-dim:#7a6650;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
   html,body{
-    margin:0; padding:0; width:100%; height:100%; overflow:hidden;
-    background:var(--bg-deep);
-    font-family:'Rajdhani',sans-serif;
-    color:var(--ink);
+    margin:0; padding:0; width:100%; height:100%;
+    background:linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+    overflow:hidden;
+    font-family:'Nunito',sans-serif; color:var(--ink);
+    touch-action:none;
   }
-  @font-face{
-    font-family:'Audiowide';
-    src:local('Audiowide');
+  #status{
+    position:fixed; inset:0; z-index:5;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
   }
-  #linkFonts{display:none;}
-  canvas{display:block; position:fixed; top:0; left:0;}
-
-  #overlay{
-    position:fixed; inset:0; z-index:10;
-    display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(ellipse at 50% 30%, rgba(255,111,165,0.18), transparent 60%), var(--bg-deep);
-  }
-  #overlay.hidden{display:none;}
-
-  .card{
-    background:linear-gradient(180deg, rgba(44,18,80,0.9), rgba(20,10,36,0.95));
-    border:1px solid rgba(0,240,255,0.35);
-    border-radius:18px;
-    padding:36px 44px;
-    text-align:center;
-    box-shadow:0 0 60px rgba(255,46,108,0.15), inset 0 0 30px rgba(0,240,255,0.05);
-    max-width:90vw;
-  }
+  #status.hidden{ display:none; }
   .title{
-    font-family:'Audiowide', 'Rajdhani', sans-serif;
-    font-size:clamp(28px,4vw,44px);
-    letter-spacing:3px;
-    background:linear-gradient(90deg, var(--neon-cyan), var(--sun-hot));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    margin:0 0 6px 0;
-    text-shadow:0 0 30px rgba(0,240,255,0.3);
+    font-family:'Fredoka','Nunito',sans-serif;
+    font-size:clamp(24px,7vw,34px); font-weight:700;
+    color:var(--player-red);
+    -webkit-text-stroke:1.2px var(--ink);
+    margin-bottom:10px;
   }
-  .subtitle{
-    color:var(--ink-dim); font-size:clamp(13px,1.6vw,16px);
-    letter-spacing:2px; text-transform:uppercase; margin-bottom:26px;
-  }
-  .ticket{
-    display:inline-block; position:relative;
-    background:#0d0620; border-radius:12px;
-    padding:18px 22px 14px;
-    border:1px dashed rgba(255,207,77,0.5);
-  }
-  .ticket::before, .ticket::after{
-    content:''; position:absolute; top:50%; width:20px; height:20px;
-    background:var(--bg-deep); border-radius:50%; transform:translateY(-50%);
-  }
-  .ticket::before{ left:-10px; }
-  .ticket::after{ right:-10px; }
-  #qrcode{ background:#fff; padding:10px; border-radius:6px; line-height:0; }
-  #qrcode img{ display:block; }
-  .ticket-label{
-    font-size:12px; letter-spacing:3px; color:var(--sun-warm);
-    text-transform:uppercase; margin-top:12px; font-weight:600;
-  }
-  .status{
-    margin-top:22px; font-size:15px; color:var(--neon-cyan);
-    letter-spacing:1px; min-height:20px;
-  }
-  .hint{
-    margin-top:8px; font-size:12px; color:var(--ink-dim); letter-spacing:0.5px;
-  }
-  .big-score{
-    font-family:'Audiowide','Rajdhani',sans-serif;
-    font-size:clamp(40px,7vw,64px);
-    color:var(--sun-warm);
-    text-shadow:0 0 20px rgba(255,204,102,0.5);
-    margin:6px 0 2px;
-  }
-  .best{ color:var(--ink-dim); font-size:14px; letter-spacing:1px; margin-bottom:20px;}
+  .msg{ font-size:16px; color:var(--ink); font-weight:800; letter-spacing:0.5px; }
   .pulse{ animation:pulse 1.6s ease-in-out infinite; }
-  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.45;} }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 
-  #hud{
-    position:fixed; top:18px; left:22px; z-index:5;
-    font-family:'Audiowide','Rajdhani',sans-serif;
-    font-size:clamp(18px,2.4vw,26px);
-    color:var(--ink);
-    text-shadow:0 0 12px rgba(0,240,255,0.6);
-    letter-spacing:2px;
+  #controls{
+    position:fixed; inset:0; display:none;
+    grid-template-columns:1fr 1fr; gap:6px; padding:6px;
+    z-index:3;
   }
-  #hud.hidden{display:none;}
+  #controls.active{ display:grid; }
+  .btn{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka','Nunito',sans-serif;
+    font-size:clamp(26px,9vw,48px); font-weight:700; letter-spacing:1px;
+    border-radius:20px;
+    color:#fff;
+    -webkit-text-stroke:1px var(--ink);
+    box-shadow:0 6px 0 rgba(0,0,0,0.25);
+    transition:transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+  }
+  #btnLeft{ background:var(--player-blue); }
+  #btnRight{ background:var(--player-red); }
+  .btn.pressed{ filter:brightness(1.15); transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.25); }
+
+  #gameover{
+    position:fixed; inset:0; z-index:4; display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+    text-align:center; padding:24px;
+  }
+  #gameover.active{ display:flex; }
+  .score{
+    font-family:'Fredoka','Nunito',sans-serif;
+    font-size:clamp(40px,14vw,72px); color:var(--coin); font-weight:700;
+    -webkit-text-stroke:2px var(--ink);
+    margin:4px 0 2px;
+  }
+  .best{ color:var(--ink); font-size:15px; margin-bottom:26px; font-weight:800; }
+  #restartBtn{
+    padding:18px 40px; font-size:20px; font-weight:800; letter-spacing:1px;
+    border-radius:14px; border:none; color:#fff;
+    background:var(--player-red);
+    box-shadow:0 6px 0 rgba(0,0,0,0.25);
+  }
+  #restartBtn.pressed{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.25); }
 </style>
 </head>
 <body>
 
-<canvas id="game"></canvas>
+<div id="status">
+  <div class="title">TURBO DASH</div>
+  <div class="msg pulse" id="statusMsg">Connecting to game…</div>
+</div>
 
-<div id="hud" class="hidden">SCORE <span id="liveScore">0</span></div>
+<div id="controls">
+  <div class="btn" id="btnLeft">◀ LEFT</div>
+  <div class="btn" id="btnRight">RIGHT ▶</div>
+</div>
 
-<div id="overlay">
-  <div class="card" id="cardContent">
-    <div class="title">NEON DRIVE</div>
-    <div class="subtitle">Dodge traffic. Don't crash.</div>
-    <div class="ticket">
-      <div id="qrcode"></div>
-      <div class="ticket-label">Scan to grab the wheel</div>
-    </div>
-    <div class="status pulse" id="statusText">Starting engine…</div>
-    <div class="hint">Or press ← / → on this device to test without a phone</div>
-  </div>
+<div id="gameover">
+  <div class="title">CRASHED</div>
+  <div class="score" id="finalScore">0</div>
+  <div class="best" id="bestScore">Best: 0</div>
+  <div id="restartBtn">TAP TO RESTART</div>
 </div>
 
 <script>
-/* ---------- Fonts (Google Fonts via link, safe cross-origin asset) ---------- */
-var link = document.createElement('link');
-link.rel = 'stylesheet';
-link.href = 'https://fonts.googleapis.com/css2?family=Audiowide&family=Rajdhani:wght@500;600;700&display=swap';
-document.head.appendChild(link);
+var linkFonts = document.createElement('link');
+linkFonts.rel = 'stylesheet';
+linkFonts.href = 'https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@600;700;800&display=swap';
+document.head.appendChild(linkFonts);
 
-/* ---------- Canvas setup ---------- */
-var canvas = document.getElementById('game');
-var ctx = canvas.getContext('2d');
-var W, H, roadLeft, roadRight, roadWidth, horizonY;
+var params = new URLSearchParams(window.location.search);
+var hostId = params.get('host');
+var statusMsg = document.getElementById('statusMsg');
+var controlsEl = document.getElementById('controls');
+var gameoverEl = document.getElementById('gameover');
+var statusEl = document.getElementById('status');
 
-function resize(){
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  roadWidth = Math.min(W * 0.5, 460);
-  roadLeft = (W - roadWidth) / 2;
-  roadRight = roadLeft + roadWidth;
-  horizonY = H * 0.16;
-}
-window.addEventListener('resize', resize);
-resize();
-
-/* ---------- Game state ---------- */
-var STATE = { LOBBY:'lobby', COUNTDOWN:'countdown', PLAYING:'playing', GAMEOVER:'gameover' };
-var state = STATE.LOBBY;
-
-var player = { x: 0, vx: 0, w: 0, h: 0 };
-var obstacles = [];
-var particles = []; // road-edge posts for motion sense
-var laneOffset = 0;
-var score = 0;
-var best = Number(localStorage.getItem('neonDriveBest') || 0);
-var speed = 260;        // px/sec downward scroll speed
-var spawnTimer = 0;
-var spawnInterval = 1.1;
-var elapsed = 0;
-var lastTime = null;
-var countdownVal = 3;
-var countdownTimer = 0;
-
-var keys = { left:false, right:false };
-var input = { left:false, right:false };
-
-function resetGame(){
-  player.w = roadWidth * 0.16;
-  player.h = player.w * 1.7;
-  player.x = (roadLeft + roadRight) / 2;
-  player.vx = 0;
-  obstacles = [];
-  score = 0;
-  speed = 260;
-  spawnTimer = 0;
-  spawnInterval = 1.1;
-  elapsed = 0;
-  laneOffset = 0;
+function showScreen(which){
+  statusEl.classList.add('hidden');
+  controlsEl.classList.remove('active');
+  gameoverEl.classList.remove('active');
+  if(which === 'status') statusEl.classList.remove('hidden');
+  if(which === 'controls') controlsEl.classList.add('active');
+  if(which === 'gameover') gameoverEl.classList.add('active');
 }
 
-/* ---------- Drawing helpers ---------- */
-function drawHorizon(){
-  var grad = ctx.createLinearGradient(0,0,0,horizonY);
-  grad.addColorStop(0, '#170b2e');
-  grad.addColorStop(1, '#2c1250');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,horizonY);
+if(!hostId){
+  statusMsg.textContent = 'No game found. Scan the QR code shown on the screen.';
+} else {
+  var peer = new Peer();
+  var conn = null;
 
-  // sun
-  var sunX = W/2, sunY = horizonY*0.72, sunR = horizonY*0.85;
-  var sunGrad = ctx.createLinearGradient(0, sunY-sunR, 0, sunY+sunR);
-  sunGrad.addColorStop(0, '#ffcc66');
-  sunGrad.addColorStop(0.5, '#ff6fa5');
-  sunGrad.addColorStop(1, '#ff2e6c');
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(sunX, sunY, sunR, 0, Math.PI*2);
-  ctx.clip();
-  ctx.fillStyle = sunGrad;
-  ctx.fillRect(sunX-sunR, sunY-sunR, sunR*2, sunR*2);
-  ctx.fillStyle = '#170b2e';
-  for(var i=0;i<6;i++){
-    var yy = sunY - sunR*0.6 + i*sunR*0.22;
-    ctx.fillRect(sunX-sunR, yy, sunR*2, sunR*0.06);
-  }
-  ctx.restore();
+  peer.on('open', function(){
+    conn = peer.connect(hostId, {reliable:true});
 
-  ctx.strokeStyle = 'rgba(0,240,255,0.5)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, horizonY);
-  ctx.lineTo(W, horizonY);
-  ctx.stroke();
-}
-
-function drawRoad(dt){
-  ctx.fillStyle = '#140a24';
-  ctx.fillRect(roadLeft, horizonY, roadWidth, H-horizonY);
-
-  // glowing edges
-  ctx.save();
-  ctx.shadowBlur = 18;
-  ctx.shadowColor = 'rgba(0,240,255,0.9)';
-  ctx.strokeStyle = 'var(--neon-cyan)';
-  ctx.strokeStyle = '#00f0ff';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(roadLeft, horizonY); ctx.lineTo(roadLeft, H);
-  ctx.moveTo(roadRight, horizonY); ctx.lineTo(roadRight, H);
-  ctx.stroke();
-  ctx.restore();
-
-  // edge posts scrolling for motion sense
-  var postSpacing = 90;
-  laneOffset += speed * dt;
-  var offsetMod = laneOffset % postSpacing;
-  ctx.fillStyle = '#ff9f1c';
-  for(var y = horizonY - postSpacing + offsetMod; y < H; y += postSpacing){
-    ctx.save();
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#ff9f1c';
-    ctx.fillRect(roadLeft-10, y, 6, 22);
-    ctx.fillRect(roadRight+4, y, 6, 22);
-    ctx.restore();
-  }
-
-  // dashed center line
-  var dashLen = 34, gap = 26, total = dashLen+gap;
-  var dOffset = laneOffset % total;
-  ctx.fillStyle = '#ffcf4d';
-  for(var yy = horizonY - total + dOffset; yy < H; yy += total){
-    ctx.fillRect((roadLeft+roadRight)/2 - 3, yy, 6, dashLen);
-  }
-}
-
-function drawCar(x, y, w, h, bodyColor, glowColor){
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.shadowBlur = 16;
-  ctx.shadowColor = glowColor;
-  // body
-  ctx.fillStyle = bodyColor;
-  roundRect(-w/2, -h/2, w, h, w*0.22);
-  ctx.fill();
-  // windshield
-  ctx.fillStyle = 'rgba(20,10,36,0.85)';
-  roundRect(-w*0.32, -h*0.28, w*0.64, h*0.28, w*0.12);
-  ctx.fill();
-  // taillights / headlights
-  ctx.shadowBlur = 8;
-  ctx.fillStyle = glowColor;
-  ctx.fillRect(-w*0.42, h*0.32, w*0.18, h*0.08);
-  ctx.fillRect(w*0.24, h*0.32, w*0.18, h*0.08);
-  ctx.restore();
-}
-
-function roundRect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-}
-
-/* ---------- Game logic ---------- */
-function spawnObstacle(){
-  var w = roadWidth * 0.16;
-  var h = w * 1.7;
-  var margin = w*0.7;
-  var x = roadLeft + margin + Math.random() * (roadWidth - margin*2);
-  var colors = [
-    {b:'#00e5ff', g:'#00e5ff'},
-    {b:'#ff9f1c', g:'#ff9f1c'},
-    {b:'#c774ff', g:'#c774ff'}
-  ];
-  var c = colors[Math.floor(Math.random()*colors.length)];
-  obstacles.push({x:x, y:horizonY-h, w:w, h:h, color:c.b, glow:c.g});
-}
-
-function updatePlaying(dt){
-  elapsed += dt;
-  score += dt * 12;
-  speed = 260 + elapsed * 9;
-  spawnInterval = Math.max(0.45, 1.1 - elapsed*0.02);
-
-  // steering
-  var accel = 1600, friction = 1400, maxV = 620;
-  var steer = (input.left || keys.left ? -1:0) + (input.right || keys.right ? 1:0);
-  if(steer !== 0){
-    player.vx += steer * accel * dt;
-    player.vx = Math.max(-maxV, Math.min(maxV, player.vx));
-  } else {
-    if(player.vx > 0) player.vx = Math.max(0, player.vx - friction*dt);
-    else if(player.vx < 0) player.vx = Math.min(0, player.vx + friction*dt);
-  }
-  player.x += player.vx * dt;
-  var minX = roadLeft + player.w/2 + 6;
-  var maxX = roadRight - player.w/2 - 6;
-  if(player.x < minX){ player.x = minX; player.vx = 0; }
-  if(player.x > maxX){ player.x = maxX; player.vx = 0; }
-
-  // spawn
-  spawnTimer += dt;
-  if(spawnTimer >= spawnInterval){
-    spawnTimer = 0;
-    spawnObstacle();
-  }
-
-  // move obstacles + collision
-  var carTop = H-120 - player.h/2, carBottom = H-120 + player.h/2;
-  var carLeft = player.x - player.w/2, carRight = player.x + player.w/2;
-  for(var i=obstacles.length-1;i>=0;i--){
-    var o = obstacles[i];
-    o.y += speed * dt;
-    if(o.y > H + 100){ obstacles.splice(i,1); continue; }
-    var oLeft = o.x-o.w/2, oRight = o.x+o.w/2, oTop = o.y, oBottom = o.y+o.h;
-    if(carLeft < oRight && carRight > oLeft && carTop < oBottom && carBottom > oTop){
-      triggerGameOver();
-      return;
-    }
-  }
-
-  document.getElementById('liveScore').textContent = Math.floor(score);
-}
-
-function triggerGameOver(){
-  state = STATE.GAMEOVER;
-  var finalScore = Math.floor(score);
-  if(finalScore > best){
-    best = finalScore;
-    localStorage.setItem('neonDriveBest', String(best));
-  }
-  document.getElementById('hud').classList.add('hidden');
-  showOverlay();
-  document.getElementById('cardContent').innerHTML =
-    '<div class="title">CRASHED</div>' +
-    '<div class="big-score">' + finalScore + '</div>' +
-    '<div class="best">Best: ' + best + '</div>' +
-    '<div class="status pulse" id="statusText">Waiting for restart on phone…</div>' +
-    '<div class="hint">Or press SPACE on this device</div>';
-  sendToController({type:'state', state:'gameover', score:finalScore, best:best});
-}
-
-function startCountdown(){
-  state = STATE.COUNTDOWN;
-  countdownVal = 3;
-  countdownTimer = 0;
-  showOverlay();
-  renderCountdownCard();
-}
-
-function renderCountdownCard(){
-  document.getElementById('cardContent').innerHTML =
-    '<div class="title">GET READY</div>' +
-    '<div class="big-score">' + countdownVal + '</div>' +
-    '<div class="hint">Use LEFT / RIGHT to dodge traffic</div>';
-}
-
-function startPlaying(){
-  state = STATE.PLAYING;
-  resetGame();
-  hideOverlay();
-  document.getElementById('hud').classList.remove('hidden');
-  sendToController({type:'state', state:'playing'});
-}
-
-function showOverlay(){ document.getElementById('overlay').classList.remove('hidden'); }
-function hideOverlay(){ document.getElementById('overlay').classList.add('hidden'); }
-
-/* ---------- Main loop ---------- */
-function frame(t){
-  if(lastTime === null) lastTime = t;
-  var dt = Math.min(0.05, (t-lastTime)/1000);
-  lastTime = t;
-
-  ctx.clearRect(0,0,W,H);
-  drawHorizon();
-  drawRoad(dt);
-
-  if(state === STATE.COUNTDOWN){
-    countdownTimer += dt;
-    if(countdownTimer >= 1){
-      countdownTimer = 0;
-      countdownVal -= 1;
-      if(countdownVal <= 0){ startPlaying(); }
-      else { renderCountdownCard(); }
-    }
-    drawCar((roadLeft+roadRight)/2, H-120, roadWidth*0.16, roadWidth*0.16*1.7, '#ff2e6c', '#ff2e6c');
-  }
-
-  if(state === STATE.PLAYING){
-    updatePlaying(dt);
-    for(var i=0;i<obstacles.length;i++){
-      var o = obstacles[i];
-      drawCar(o.x, o.y + o.h/2, o.w, o.h, o.color, o.glow);
-    }
-    if(state === STATE.PLAYING){
-      drawCar(player.x, H-120, player.w, player.h, '#ff2e6c', '#ff2e6c');
-    }
-  }
-
-  if(state === STATE.GAMEOVER){
-    for(var j=0;j<obstacles.length;j++){
-      var oo = obstacles[j];
-      drawCar(oo.x, oo.y + oo.h/2, oo.w, oo.h, oo.color, oo.glow);
-    }
-  }
-
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-
-/* ---------- Keyboard fallback (testing without a phone) ---------- */
-window.addEventListener('keydown', function(e){
-  if(e.key === 'ArrowLeft') keys.left = true;
-  if(e.key === 'ArrowRight') keys.right = true;
-  if(e.key === ' ' && state === STATE.GAMEOVER) startCountdown();
-});
-window.addEventListener('keyup', function(e){
-  if(e.key === 'ArrowLeft') keys.left = false;
-  if(e.key === 'ArrowRight') keys.right = false;
-});
-
-/* ---------- PeerJS pairing ---------- */
-var peer = null;
-var conn = null;
-var statusEl = document.getElementById('statusText');
-
-function setStatus(msg){
-  var el = document.getElementById('statusText');
-  if(el) el.textContent = msg;
-}
-
-function sendToController(msg){
-  if(conn && conn.open){
-    try{ conn.send(msg); }catch(e){}
-  }
-}
-
-function initPeer(){
-  peer = new Peer();
-  peer.on('open', function(id){
-    var controllerUrl = new URL('controller.html', window.location.href);
-    controllerUrl.searchParams.set('host', id);
-    document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), {
-      text: controllerUrl.toString(),
-      width: 200,
-      height: 200,
-      colorDark: '#140a24',
-      colorLight: '#ffffff'
-    });
-    setStatus('Waiting for phone to connect…');
-  });
-
-  peer.on('connection', function(c){
-    conn = c;
     conn.on('open', function(){
-      setStatus('Phone connected!');
-      setTimeout(startCountdown, 700);
+      statusMsg.textContent = 'Connected! Get ready…';
     });
+
     conn.on('data', function(msg){
       if(!msg || !msg.type) return;
-      if(msg.type === 'input'){
-        if(msg.dir === 'left') input.left = msg.pressed;
-        if(msg.dir === 'right') input.right = msg.pressed;
-      } else if(msg.type === 'restart'){
-        if(state === STATE.GAMEOVER) startCountdown();
+      if(msg.type === 'state'){
+        if(msg.state === 'playing'){
+          showScreen('controls');
+        } else if(msg.state === 'gameover'){
+          document.getElementById('finalScore').textContent = msg.score;
+          document.getElementById('bestScore').textContent = 'Best: ' + msg.best;
+          showScreen('gameover');
+        } else if(msg.state === 'ready'){
+          showScreen('status');
+          statusMsg.textContent = 'Get ready…';
+        }
       }
     });
+
     conn.on('close', function(){
-      setStatus('Phone disconnected. Rescan to reconnect.');
+      statusMsg.textContent = 'Lost connection to game.';
+      showScreen('status');
     });
   });
 
   peer.on('error', function(err){
     console.error(err);
-    setStatus('Connection error: ' + err.type + '. Retrying…');
-    setTimeout(initPeer, 2000);
+    statusMsg.textContent = 'Connection error. Reopen this page from a fresh QR scan.';
+    showScreen('status');
+  });
+
+  function send(msg){
+    if(conn && conn.open){
+      try{ conn.send(msg); }catch(e){}
+    }
+  }
+
+  function bindHold(el, onDown, onUp){
+    el.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      el.classList.add('pressed');
+      onDown();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(evt){
+      el.addEventListener(evt, function(e){
+        el.classList.remove('pressed');
+        onUp();
+      });
+    });
+  }
+
+  var btnLeft = document.getElementById('btnLeft');
+  var btnRight = document.getElementById('btnRight');
+  bindHold(btnLeft,
+    function(){ send({type:'input', dir:'left', pressed:true}); },
+    function(){ send({type:'input', dir:'left', pressed:false}); }
+  );
+  bindHold(btnRight,
+    function(){ send({type:'input', dir:'right', pressed:true}); },
+    function(){ send({type:'input', dir:'right', pressed:false}); }
+  );
+
+  var restartBtn = document.getElementById('restartBtn');
+  restartBtn.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    restartBtn.classList.add('pressed');
+    send({type:'restart'});
+    setTimeout(function(){ restartBtn.classList.remove('pressed'); }, 150);
   });
 }
-initPeer();
 </script>
 </body>
 </html>
