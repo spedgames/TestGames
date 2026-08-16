@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Choreographer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">&#9679;&#9679;&#9679;</span>
+      <div class="brand-text">
+        <h1>Classroom Choreographer</h1>
+        <p>Plan the room. Plan the rotation. Watch it run.</p>
+      </div>
+    </div>
+    <div class="save-indicator" id="saveIndicator">All changes saved</div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="layout">1 &middot; Layout</button>
+    <button class="tab-btn" data-tab="roster">2 &middot; Roster</button>
+    <button class="tab-btn" data-tab="choreo">3 &middot; Choreography</button>
+    <button class="tab-btn" data-tab="playback">4 &middot; Playback</button>
+    <button class="tab-btn" data-tab="templates">5 &middot; Templates</button>
+  </nav>
+
+  <main class="tab-content">
+
+    <!-- LAYOUT TAB -->
+    <section class="panel active" id="panel-layout">
+      <div class="panel-grid">
+        <div class="canvas-wrap">
+          <div class="canvas-toolbar">
+            <button class="btn btn-accent" id="addAreaBtn">+ Add area</button>
+            <span class="hint">Drag to move &middot; drag corner to resize &middot; click to edit</span>
+          </div>
+          <div class="canvas" id="canvas"></div>
+        </div>
+        <aside class="side-panel" id="areaEditor">
+          <h3>Area details</h3>
+          <p class="empty-note">Select an area on the layout, or add a new one, to edit it here.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ROSTER TAB -->
+    <section class="panel" id="panel-roster">
+      <div class="panel-grid">
+        <div class="card">
+          <h3>Students</h3>
+          <form id="studentForm" class="inline-form">
+            <input type="text" id="studentName" placeholder="Student name" required>
+            <input type="color" id="studentColor" value="#4A6FA5" title="Avatar color">
+            <button class="btn btn-accent" type="submit">+ Add student</button>
+          </form>
+          <ul class="list" id="studentList"></ul>
+        </div>
+        <div class="card">
+          <h3>Groups</h3>
+          <p class="muted">Groups let you assign a choreography step to several students at once.</p>
+          <form id="groupForm" class="inline-form">
+            <input type="text" id="groupName" placeholder="Group name" required>
+            <button class="btn btn-accent" type="submit">+ Add group</button>
+          </form>
+          <div id="groupMemberPicker" class="group-picker"></div>
+          <ul class="list" id="groupList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHOREOGRAPHY TAB -->
+    <section class="panel" id="panel-choreo">
+      <div class="panel-grid choreo-grid">
+        <div class="card">
+          <h3>Students</h3>
+          <ul class="list selectable" id="choreoStudentList"></ul>
+          <div class="divider"></div>
+          <h3>Bulk assign to a group</h3>
+          <form id="bulkForm" class="stack-form">
+            <select id="bulkGroup"></select>
+            <select id="bulkArea"></select>
+            <input type="number" id="bulkDuration" min="1" value="10" placeholder="Minutes">
+            <button class="btn btn-secondary" type="submit">Add step to group</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3 id="choreoTitle">Choose a student</h3>
+          <form id="stepForm" class="stack-form" style="display:none">
+            <select id="stepArea"></select>
+            <input type="number" id="stepDuration" min="1" value="10" placeholder="Minutes">
+            <button class="btn btn-accent" type="submit">+ Add step</button>
+          </form>
+          <ol class="steps" id="stepsList"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAYBACK TAB -->
+    <section class="panel" id="panel-playback">
+      <div class="playback-controls">
+        <button class="btn btn-accent" id="playBtn">&#9654; Play</button>
+        <button class="btn btn-secondary" id="resetBtn">&#8634; Reset</button>
+        <label class="speed-label">Speed
+          <select id="speedSelect">
+            <option value="2000">Fast (2s = 1 min)</option>
+            <option value="5000" selected>Normal (5s = 1 min)</option>
+            <option value="60000">Real time (1min = 1min)</option>
+          </select>
+        </label>
+        <div class="time-display" id="timeDisplay">0:00 <span class="of">/ 0:00</span></div>
+      </div>
+      <input type="range" id="scrubber" class="scrubber" min="0" max="0" step="0.1" value="0">
+      <div class="canvas-wrap">
+        <div class="canvas playback-canvas" id="playbackCanvas">
+          <div class="pb-layer" id="pbAreaLayer"></div>
+          <div class="pb-layer" id="pbAvatarLayer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEMPLATES TAB -->
+    <section class="panel" id="panel-templates">
+      <div class="panel-grid">
+        <div class="card">
+          <h3>Save current plan</h3>
+          <p class="muted">Saves your layout, roster, groups and choreography together as a reusable template.</p>
+          <button class="btn btn-accent" id="saveTemplateBtn">+ Save as template</button>
+        </div>
+        <div class="card">
+          <h3>Saved templates</h3>
+          <ul class="list" id="templateList"></ul>
+        </div>
+      </div>
+      <div class="card danger-zone">
+        <h3>Reset</h3>
+        <p class="muted">Clears the current layout, roster and choreography from this device. Saved templates are kept.</p>
+        <button class="btn btn-danger" id="clearAllBtn">Clear current plan</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
