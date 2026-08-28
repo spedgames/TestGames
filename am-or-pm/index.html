@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AM or PM? — A Time of Day Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-top:#EAF2FB;
+    --bg-bottom:#DCE9F7;
+    --card:#FFFFFF;
+    --ink:#1D2B3A;
+    --ink-soft:#5B6B7C;
+    --line:#E1E9F1;
+    --am:#E7A438;
+    --am-deep:#C6862195;
+    --am-deep-solid:#C08425;
+    --pm:#3E5AA8;
+    --pm-deep:#2E4483;
+    --success:#2FA37A;
+    --success-soft:#E4F5EE;
+    --error:#DC5B62;
+    --error-soft:#FBEBEC;
+    --acc:#4FA8E8;
+    --acc2:#8FCBEF;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --shadow-card:0 20px 50px -20px rgba(29,43,58,0.25), 0 2px 8px rgba(29,43,58,0.06);
+    --shadow-btn:0 8px 20px -8px rgba(29,43,58,0.25);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    align-items:stretch;
+    justify-content:center;
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 700px at 15% -10%, var(--acc2) 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    background-attachment:fixed;
+    transition:background 900ms ease;
+    padding:clamp(8px,2.5vh,24px) 16px;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+
+  body.mood-morning{ --acc:#F0B043; --acc2:#F7D9A0; }
+  body.mood-afternoon{ --acc:#4FA8E8; --acc2:#B9E1FA; }
+  body.mood-evening{ --acc:#9770C9; --acc2:#F0AE7E; }
+  body.mood-night{ --acc:#3A4C8C; --acc2:#7C8FCB; }
+
+  .stage{
+    width:100%;
+    max-width:600px;
+    height:100%;
+    max-height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    min-height:0;
+    margin:0 auto;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-card);
+    padding:clamp(16px,3.5vh,32px) clamp(18px,4vw,30px) clamp(14px,2.5vh,26px);
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    max-height:100%;
+    min-height:0;
+  }
+
+  .card.is-quiz{ height:100%; }
+
+  .card::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    height:130px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--acc) 16%, transparent) 0%, transparent 100%);
+    pointer-events:none;
+    transition:background 700ms ease;
+    z-index:0;
+  }
+
+  .card > *{ position:relative; z-index:1; }
+
+  .eyebrow{
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin:0 0 3px;
+    flex:none;
+  }
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(17px,3vh,22px);
+    line-height:1.15;
+    margin:0 0 clamp(8px,1.6vh,14px);
+    letter-spacing:-0.01em;
+    flex:none;
+  }
+
+  h1 .sun{ color:var(--am-deep-solid); }
+  h1 .moon{ color:var(--pm-deep); }
+
+  /* ---------- Progress ---------- */
+  .progress-wrap{
+    margin-bottom:clamp(8px,1.6vh,14px);
+    flex:none;
+  }
+  .progress-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+  .progress-meta .score{
+    color:var(--success);
+    font-weight:700;
+  }
+  .progress-track{
+    position:relative;
+    height:8px;
+    border-radius:99px;
+    background:var(--line);
+    overflow:visible;
+  }
+  .progress-fill{
+    height:100%;
+    border-radius:99px;
+    width:0%;
+    background:linear-gradient(90deg, var(--am) 0%, var(--pm) 100%);
+    transition:width 600ms cubic-bezier(.65,0,.35,1);
+  }
+  .progress-marker{
+    position:absolute;
+    top:50%;
+    left:0%;
+    width:20px;
+    height:20px;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fff, var(--am) 60%);
+    box-shadow:0 2px 6px rgba(0,0,0,0.2), 0 0 0 4px #fff;
+    transition:left 600ms cubic-bezier(.65,0,.35,1);
+  }
+
+  /* ---------- Image stage ---------- */
+  .image-stage{
+    position:relative;
+    border-radius:var(--radius-md);
+    background:#F3F6FA;
+    height:clamp(220px,54vh,520px);
+    flex:1 1 auto;
+    min-height:160px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    margin-bottom:clamp(10px,1.8vh,16px);
+    border:1px solid var(--line);
+  }
+  .image-stage img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+    animation:fadeIn 420ms ease;
+  }
+  @keyframes fadeIn{ from{opacity:0; transform:scale(1.02);} to{opacity:1; transform:scale(1);} }
+
+  .image-fallback{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    padding:20px;
+    text-align:center;
+    color:var(--ink-soft);
+  }
+  .image-fallback svg{ width:38px; height:38px; opacity:0.5; }
+  .image-fallback code{
+    background:#fff;
+    border:1px solid var(--line);
+    padding:3px 8px;
+    border-radius:6px;
+    font-size:12px;
+    color:var(--ink);
+  }
+
+  /* ---------- Answer buttons ---------- */
+  .answers{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:clamp(10px,2vw,16px);
+    margin-bottom:6px;
+    flex:none;
+  }
+
+  .answer-btn{
+    appearance:none;
+    border:3px solid var(--line);
+    background:#fff;
+    border-radius:18px;
+    padding:clamp(12px,2.4vh,20px) 10px;
+    font-family:'Inter',sans-serif;
+    font-weight:800;
+    font-size:clamp(19px,5vw,25px);
+    letter-spacing:0.02em;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+  }
+  .answer-btn:hover:not(:disabled){
+    transform:translateY(-3px);
+    box-shadow:0 14px 28px -10px rgba(29,43,58,0.3);
+  }
+  .answer-btn:active:not(:disabled){ transform:translateY(-1px); }
+  .answer-btn:focus-visible{
+    outline:3px solid var(--acc);
+    outline-offset:2px;
+  }
+
+  .answer-btn.am{ background:linear-gradient(160deg,#FFF7E7,#FFFFFF); border-color:#F0DBAE; color:var(--am-deep-solid); }
+  .answer-btn.am:hover:not(:disabled){ border-color:var(--am); box-shadow:0 14px 30px -12px rgba(231,164,56,0.5); }
+  .answer-btn.pm{ background:linear-gradient(160deg,#EEF2FF,#FFFFFF); border-color:#CBD5EE; color:var(--pm-deep); }
+  .answer-btn.pm:hover:not(:disabled){ border-color:var(--pm); box-shadow:0 14px 30px -12px rgba(62,90,168,0.5); }
+
+  .answer-btn:disabled{ cursor:default; }
+
+  .answer-btn.correct{
+    background:var(--success-soft);
+    border-color:var(--success);
+    color:#1B7A5A;
+    box-shadow:0 0 0 4px rgba(47,163,122,0.15);
+  }
+  .answer-btn.wrong{
+    background:var(--error-soft);
+    border-color:var(--error);
+    animation:shake 420ms ease;
+  }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-1px); }
+    20%,80%{ transform:translateX(3px); }
+    30%,50%,70%{ transform:translateX(-6px); }
+    40%,60%{ transform:translateX(6px); }
+  }
+
+  /* ---------- Feedback ---------- */
+  .feedback{
+    min-height:clamp(30px,5vh,40px);
+    margin-top:clamp(6px,1.2vh,10px);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-radius:var(--radius-md);
+    padding:10px 14px;
+    font-size:13.5px;
+    line-height:1.35;
+    opacity:0;
+    transform:translateY(4px);
+    transition:opacity 260ms ease, transform 260ms ease;
+    pointer-events:none;
+    flex:none;
+  }
+  .feedback.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .feedback.correct{ background:var(--success-soft); color:#1B7A5A; }
+  .feedback.hint{ background:#FBF3E7; color:#8A5A18; }
+  .feedback .badge{
+    flex:none;
+    width:30px; height:30px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    background:rgba(255,255,255,0.65);
+  }
+  .feedback strong{ font-weight:700; }
+
+  /* ---------- Particles ---------- */
+  .particle-field{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    overflow:visible;
+    z-index:5;
+  }
+  .particle{
+    position:absolute;
+    top:50%; left:50%;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--success);
+    opacity:0;
+    animation:pop 900ms ease-out forwards;
+  }
+  @keyframes pop{
+    0%{ opacity:1; transform:translate(-50%,-50%) scale(0.6) translate(0,0); }
+    100%{ opacity:0; transform:translate(-50%,-50%) scale(1) translate(var(--tx), var(--ty)); }
+  }
+
+  /* ---------- Start / End screens ---------- */
+  .screen{ text-align:center; padding:clamp(4px,1vh,8px) 4px 4px; display:flex; flex-direction:column; justify-content:center; flex:1; min-height:0; }
+  #quizScreen{ display:flex; flex-direction:column; flex:1; min-height:0; }
+  #quizScreen.hidden, #startScreen.hidden, #endScreen.hidden{ display:none; }
+  .screen .glyph{
+    font-size:clamp(30px,7vh,44px);
+    margin-bottom:clamp(4px,1.4vh,10px);
+  }
+  .screen p{
+    color:var(--ink-soft);
+    font-size:14.5px;
+    line-height:1.55;
+    margin:0 0 clamp(14px,3vh,24px);
+  }
+  .primary-btn{
+    appearance:none;
+    border:none;
+    background:linear-gradient(135deg, var(--am) 0%, var(--pm) 100%);
+    color:#fff;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:15.5px;
+    padding:14px 30px;
+    border-radius:99px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -10px rgba(62,90,168,0.55);
+    transition:transform 140ms ease, box-shadow 140ms ease;
+  }
+  .primary-btn:hover{ transform:translateY(-2px); box-shadow:0 14px 28px -10px rgba(62,90,168,0.6); }
+  .primary-btn:focus-visible{ outline:3px solid var(--acc); outline-offset:3px; }
+
+  .score-ring{
+    width:clamp(90px,20vh,120px); height:clamp(90px,20vh,120px);
+    margin:0 auto clamp(10px,2vh,18px);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--success) calc(var(--pct,0)*1%), var(--line) 0);
+  }
+  .score-ring-inner{
+    width:80%; height:80%;
+    border-radius:50%;
+    background:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .score-ring-inner .num{ font-family:'Fraunces',serif; font-size:26px; font-weight:700; }
+  .score-ring-inner .den{ font-size:11px; color:var(--ink-soft); font-weight:600; }
+
+  .hidden{ display:none !important; }
+
+  footer{
+    text-align:center;
+    margin-top:clamp(6px,1.4vh,14px);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    opacity:0.75;
+    flex:none;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  @media (max-height:640px){
+    .eyebrow{ display:none; }
+    .image-stage{ height:clamp(90px,22vh,180px); }
+    footer{ display:none; }
+  }
+
+  @media (max-height:480px){
+    h1{ font-size:16px; margin-bottom:8px; }
+    .progress-wrap{ margin-bottom:8px; }
+    .answer-btn{ padding:10px 8px; font-size:18px; }
+  }
+
+  /* ---------- Reminder modal ---------- */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(20,28,40,0.55);
+    backdrop-filter:blur(3px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:100;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 220ms ease;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+
+  .modal-box{
+    background:#fff;
+    border-radius:20px;
+    padding:clamp(22px,4vh,32px) clamp(22px,5vw,34px) clamp(20px,3.5vh,28px);
+    max-width:400px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 30px 60px -20px rgba(20,28,40,0.4);
+    transform:scale(0.92) translateY(6px);
+    opacity:0;
+    transition:transform 260ms cubic-bezier(.34,1.56,.64,1), opacity 220ms ease;
+  }
+  .modal-overlay.show .modal-box{
+    transform:scale(1) translateY(0);
+    opacity:1;
+  }
+
+  .modal-eyebrow{
+    text-transform:uppercase;
+    letter-spacing:0.14em;
+    font-size:11px;
+    font-weight:700;
+    color:var(--success);
+    margin:0 0 14px;
+  }
+
+  .modal-visual{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-bottom:16px;
+  }
+  .modal-visual img{
+    width:152px;
+    height:152px;
+    object-fit:contain;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:#F3F6FA;
+  }
+  .modal-arrow{
+    font-size:22px;
+    color:var(--ink-soft);
+    flex:none;
+  }
+  .modal-answer{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:34px;
+    line-height:1;
+  }
+  .modal-answer.am{ color:var(--am-deep-solid); }
+  .modal-answer.pm{ color:var(--pm-deep); }
+
+  .modal-text{
+    font-size:16px;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 22px;
+  }
+
+  .modal-box .primary-btn{
+    width:100%;
+    padding:13px 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="card" id="card">
+
+    <!-- START SCREEN -->
+    <div class="screen" id="startScreen">
+      <div class="glyph">🌅</div>
+      <p class="eyebrow">Time of Day Practice</p>
+      <h1><span class="sun">AM</span> or <span class="moon">PM</span>?</h1>
+      <p>You'll see a picture of a moment in the day. Decide whether it happens in the morning (<strong>AM</strong>) or in the afternoon, evening, and night (<strong>PM</strong>).</p>
+      <button class="primary-btn" id="startBtn">Start Quiz</button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div class="hidden" id="quizScreen">
+      <p class="eyebrow">Time of Day Practice</p>
+      <h1>Is it <span class="sun">AM</span> or <span class="moon">PM</span>?</h1>
+
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="progressLabel">Question 1 of 9</span>
+          <span class="score">Score: <span id="scoreLabel">0</span></span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-marker" id="progressMarker"></div>
+        </div>
+      </div>
+
+      <div class="image-stage" id="imageStage">
+        <img id="quizImage" src="" alt="A scene to identify as morning, afternoon, evening, or night">
+        <div class="particle-field" id="particleField"></div>
+      </div>
+
+      <div class="answers">
+        <button class="answer-btn am" id="btnAM" data-choice="AM">AM</button>
+        <button class="answer-btn pm" id="btnPM" data-choice="PM">PM</button>
+      </div>
+
+      <div class="feedback" id="feedback" aria-live="polite">
+        <span class="badge" id="feedbackBadge"></span>
+        <span id="feedbackText"></span>
+      </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div class="hidden screen" id="endScreen">
+      <div class="score-ring" id="scoreRing">
+        <div class="score-ring-inner">
+          <span class="num" id="finalScore">0</span>
+          <span class="den" id="finalTotal">of 9</span>
+        </div>
+      </div>
+      <p class="eyebrow" id="endEyebrow">Round Complete</p>
+      <h1 id="endTitle">Nice work!</h1>
+      <p id="endMessage">Morning is AM. Afternoon, evening, and night are PM.</p>
+      <button class="primary-btn" id="replayBtn">Play Again</button>
+    </div>
+
+  </div>
+  <footer>Place your images in an <code>assets</code> folder next to this file.</footer>
+</div>
+
+<!-- REMINDER MODAL -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalText">
+  <div class="modal-box">
+    <p class="modal-eyebrow">Correct</p>
+    <div class="modal-visual">
+      <img id="modalIcon" src="" alt="">
+      <span class="modal-arrow">→</span>
+      <span class="modal-answer" id="modalAnswer">AM</span>
+    </div>
+    <p class="modal-text" id="modalText">Morning is AM.</p>
+    <button class="primary-btn" id="modalNextBtn">Next</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Image pool ----------
+  const POOL = [
+    {category:"morning", n:1}, {category:"morning", n:2}, {category:"morning", n:3},
+    {category:"afternoon", n:1}, {category:"afternoon", n:2}, {category:"afternoon", n:3},
+    {category:"evening", n:1}, {category:"evening", n:2},
+    {category:"night", n:1}
+  ];
+
+  const CORRECT_ANSWER = { morning:"AM", afternoon:"PM", evening:"PM", night:"PM" };
+  const REMINDER = {
+    morning: "Morning is AM.",
+    afternoon: "Afternoon is PM.",
+    evening: "Evening is PM.",
+    night: "Night is PM."
+  };
+  const LABEL = { morning:"Morning", afternoon:"Afternoon", evening:"Evening", night:"Night" };
+
+  function fileFor(item){ return `assets/${item.category}(${item.n}).png`; }
+  function iconFor(category){ return `assets/${category}icon.png`; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  // ---------- State ----------
+  let queue = [];
+  let index = 0;
+  let score = 0;
+  let answeredCurrent = false;
+  const TOTAL = POOL.length;
+
+  // ---------- Elements ----------
+  const cardEl = document.getElementById("card");
+  const startScreen = document.getElementById("startScreen");
+  const quizScreen = document.getElementById("quizScreen");
+  const endScreen = document.getElementById("endScreen");
+  const startBtn = document.getElementById("startBtn");
+  const replayBtn = document.getElementById("replayBtn");
+
+  const progressLabel = document.getElementById("progressLabel");
+  const scoreLabel = document.getElementById("scoreLabel");
+  const progressFill = document.getElementById("progressFill");
+  const progressMarker = document.getElementById("progressMarker");
+
+  const quizImage = document.getElementById("quizImage");
+  const imageStage = document.getElementById("imageStage");
+  const particleField = document.getElementById("particleField");
+
+  const btnAM = document.getElementById("btnAM");
+  const btnPM = document.getElementById("btnPM");
+  const feedback = document.getElementById("feedback");
+  const feedbackBadge = document.getElementById("feedbackBadge");
+  const feedbackText = document.getElementById("feedbackText");
+
+  const modalOverlay = document.getElementById("modalOverlay");
+  const modalIcon = document.getElementById("modalIcon");
+  const modalAnswer = document.getElementById("modalAnswer");
+  const modalText = document.getElementById("modalText");
+  const modalNextBtn = document.getElementById("modalNextBtn");
+
+  const scoreRing = document.getElementById("scoreRing");
+  const finalScore = document.getElementById("finalScore");
+  const finalTotal = document.getElementById("finalTotal");
+  const endTitle = document.getElementById("endTitle");
+  const endMessage = document.getElementById("endMessage");
+
+  // ---------- Audio (synthesized, no external files needed) ----------
+  let audioCtx = null;
+  function ctx(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+  function tone(freq, start, dur, type, gain){
+    const c = ctx();
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.value = 0;
+    osc.connect(g); g.connect(c.destination);
+    const t0 = c.currentTime + start;
+    g.gain.linearRampToValueAtTime(gain, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  function playCorrect(){
+    try{
+      tone(523.25, 0, 0.16, "sine", 0.18);
+      tone(659.25, 0.10, 0.16, "sine", 0.16);
+      tone(783.99, 0.20, 0.28, "sine", 0.16);
+    }catch(e){}
+  }
+  function playWrong(){
+    try{
+      tone(196, 0, 0.18, "triangle", 0.15);
+      tone(174, 0.05, 0.22, "triangle", 0.12);
+    }catch(e){}
+  }
+
+  // ---------- Particles ----------
+  function burstParticles(){
+    const colors = ["#2FA37A","#E7A438","#4FA8E8","#9770C9"];
+    for(let i=0;i<16;i++){
+      const p = document.createElement("span");
+      p.className = "particle";
+      const angle = Math.random()*Math.PI*2;
+      const dist = 60 + Math.random()*70;
+      p.style.setProperty("--tx", `${Math.cos(angle)*dist}px`);
+      p.style.setProperty("--ty", `${Math.sin(angle)*dist}px`);
+      p.style.background = colors[i % colors.length];
+      p.style.left = (30 + Math.random()*40) + "%";
+      p.style.top = (30 + Math.random()*40) + "%";
+      particleField.appendChild(p);
+      setTimeout(()=>p.remove(), 950);
+    }
+  }
+
+  // ---------- Mood background ----------
+  function setMood(category){
+    document.body.classList.remove("mood-morning","mood-afternoon","mood-evening","mood-night");
+    document.body.classList.add("mood-" + category);
+  }
+
+  // ---------- Game flow ----------
+  function startGame(){
+    queue = shuffle(POOL);
+    index = 0;
+    score = 0;
+    startScreen.classList.add("hidden");
+    endScreen.classList.add("hidden");
+    quizScreen.classList.remove("hidden");
+    cardEl.classList.add("is-quiz");
+    scoreLabel.textContent = "0";
+    updateProgress();
+    loadQuestion();
+  }
+
+  function updateProgress(){
+    progressLabel.textContent = `Question ${Math.min(index+1,TOTAL)} of ${TOTAL}`;
+    scoreLabel.textContent = String(score);
+    const pct = (index / TOTAL) * 100;
+    progressFill.style.width = pct + "%";
+    progressMarker.style.left = pct + "%";
+  }
+
+  function loadQuestion(){
+    answeredCurrent = false;
+    feedback.classList.remove("show","correct","hint");
+    btnAM.classList.remove("correct","wrong");
+    btnPM.classList.remove("correct","wrong");
+    btnAM.disabled = false;
+    btnPM.disabled = false;
+
+    const item = queue[index];
+    quizImage.onerror = () => showImageFallback(item);
+    quizImage.style.display = "block";
+    const fallback = imageStage.querySelector(".image-fallback");
+    if(fallback) fallback.remove();
+    quizImage.src = fileFor(item);
+    quizImage.alt = "A scene to identify as morning, afternoon, evening, or night";
+  }
+
+  function showImageFallback(item){
+    quizImage.style.display = "none";
+    const div = document.createElement("div");
+    div.className = "image-fallback";
+    div.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+        <circle cx="9" cy="11" r="2"></circle>
+        <path d="M21 16l-5-5-9 9"></path>
+      </svg>
+      <div>Image not found. Add it to your <strong>assets</strong> folder as:</div>
+      <code>${fileFor(item)}</code>
+    `;
+    imageStage.appendChild(div);
+  }
+
+  function handleAnswer(choice){
+    if(answeredCurrent) return;
+    const item = queue[index];
+    const correctAnswer = CORRECT_ANSWER[item.category];
+    const chosenBtn = choice === "AM" ? btnAM : btnPM;
+
+    if(choice === correctAnswer){
+      answeredCurrent = true;
+      score += 1;
+      btnAM.disabled = true;
+      btnPM.disabled = true;
+      chosenBtn.classList.add("correct");
+      setMood(item.category);
+      burstParticles();
+      playCorrect();
+      scoreLabel.textContent = String(score);
+
+      setTimeout(() => openReminderModal(item), 550);
+    } else {
+      chosenBtn.classList.remove("wrong");
+      void chosenBtn.offsetWidth; // restart animation
+      chosenBtn.classList.add("wrong");
+      playWrong();
+
+      feedbackBadge.textContent = "?";
+      feedbackText.innerHTML = `Not quite — look again and try the other option.`;
+      feedback.classList.add("show","hint");
+      setTimeout(()=>{
+        if(!answeredCurrent) feedback.classList.remove("show");
+      }, 1400);
+    }
+  }
+
+  function openReminderModal(item){
+    const answer = CORRECT_ANSWER[item.category];
+    modalIcon.onerror = () => { modalIcon.style.display = "none"; };
+    modalIcon.style.display = "block";
+    modalIcon.src = iconFor(item.category);
+    modalIcon.alt = LABEL[item.category];
+    modalAnswer.textContent = answer;
+    modalAnswer.classList.remove("am","pm");
+    modalAnswer.classList.add(answer.toLowerCase());
+    modalText.textContent = REMINDER[item.category];
+    modalOverlay.classList.add("show");
+    modalNextBtn.focus();
+  }
+
+  function closeReminderModal(){
+    modalOverlay.classList.remove("show");
+  }
+
+  function nextQuestion(){
+    index += 1;
+    if(index >= TOTAL){
+      updateProgress();
+      showEnd();
+      return;
+    }
+    updateProgress();
+    loadQuestion();
+  }
+
+  function showEnd(){
+    quizScreen.classList.add("hidden");
+    endScreen.classList.remove("hidden");
+    cardEl.classList.remove("is-quiz");
+    document.body.classList.remove("mood-morning","mood-afternoon","mood-evening","mood-night");
+
+    finalScore.textContent = String(score);
+    finalTotal.textContent = `of ${TOTAL}`;
+    const pct = Math.round((score/TOTAL)*100);
+    scoreRing.style.setProperty("--pct", pct);
+
+    if(score === TOTAL){
+      endTitle.textContent = "Perfect score!";
+      endMessage.textContent = "You matched every moment to AM or PM correctly.";
+    } else if(score >= Math.ceil(TOTAL*0.7)){
+      endTitle.textContent = "Nice work!";
+      endMessage.textContent = "You're getting the hang of AM and PM.";
+    } else {
+      endTitle.textContent = "Good effort!";
+      endMessage.textContent = "Remember: morning is AM. Afternoon, evening, and night are PM.";
+    }
+  }
+
+  // ---------- Events ----------
+  startBtn.addEventListener("click", startGame);
+  replayBtn.addEventListener("click", startGame);
+  btnAM.addEventListener("click", () => handleAnswer("AM"));
+  btnPM.addEventListener("click", () => handleAnswer("PM"));
+  modalNextBtn.addEventListener("click", () => {
+    closeReminderModal();
+    nextQuestion();
+  });
+
+})();
+</script>
+
+</body>
+</html>
