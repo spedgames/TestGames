@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Counting Kitchen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:        #FFF6E9;
+    --counter:      #E7C99A;
+    --counter-dark: #C89F6B;
+    --ink:          #3B2A1F;
+    --ink-soft:     #6E5A48;
+    --tomato:       #E8562F;
+    --tomato-dark:  #C7431F;
+    --leaf:         #4C8C4A;
+    --leaf-dark:    #366B35;
+    --butter:       #F4B740;
+    --plate-rim:    #E9D9B8;
+    --white:        #FFFDF8;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--cream);
+    font-family:'Quicksand', sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+    touch-action: manipulation;
+  }
+
+  #app{
+    position:relative;
+    height:100vh;
+    height:100dvh;
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(244,183,64,0.16), transparent 40%),
+      radial-gradient(circle at 88% 14%, rgba(76,140,74,0.10), transparent 38%),
+      var(--cream);
+  }
+
+  .view{
+    display:none;
+    flex-direction:column;
+    height:100%;
+    width:100%;
+    animation: fadeIn .35s ease;
+  }
+  .view.active{ display:flex; }
+
+  @keyframes fadeIn{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  h1,h2,h3, .display{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    margin:0;
+  }
+
+  /* ---------- MENU ---------- */
+  .menu{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 6vh 6vw;
+    gap: clamp(18px, 4vh, 36px);
+  }
+  .menu-emoji-row{
+    font-size: clamp(30px, 6vw, 46px);
+    letter-spacing: 0.15em;
+    line-height:1;
+  }
+  .menu-title{
+    font-size: clamp(34px, 8vw, 58px);
+    color: var(--ink);
+    line-height:1.05;
+  }
+  .menu-sub{
+    font-size: clamp(16px, 2.6vw, 20px);
+    color: var(--ink-soft);
+    max-width: 34ch;
+    font-weight:600;
+  }
+  .menu-buttons{
+    display:flex;
+    gap: clamp(14px, 3vw, 24px);
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top: 6px;
+  }
+  .mode-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-size: clamp(22px, 3.4vw, 28px);
+    font-weight:700;
+    color:var(--white);
+    border:none;
+    border-radius: 26px;
+    padding: 22px 40px;
+    min-width: 220px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.14), 0 18px 30px rgba(0,0,0,0.16);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .mode-btn .icon{ font-size: 1.5em; line-height:1; }
+  .mode-btn .label-sub{
+    font-family:'Quicksand', sans-serif;
+    font-size: 0.42em;
+    font-weight:600;
+    opacity:0.92;
+  }
+  .mode-btn:active{
+    transform: translateY(6px);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.14);
+  }
+  .mode-btn.learn{ background: linear-gradient(180deg, #F0703F, var(--tomato)); }
+  .mode-btn.try{ background: linear-gradient(180deg, #63A860, var(--leaf)); }
+
+  /* ---------- SHARED SCENE (learn + try) ---------- */
+  .view.active.scene{
+    flex:1;
+    flex-direction:column;
+    min-height:0;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: max(14px, env(safe-area-inset-top)) 20px 6px;
+  }
+  .back-btn{
+    background:none;
+    border:none;
+    font-family:'Quicksand',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:8px 10px;
+    border-radius:12px;
+  }
+  .back-btn:active{ background: rgba(59,42,31,0.08); }
+
+  .progress{
+    display:flex;
+    gap:6px;
+    align-items:center;
+  }
+  .dot{
+    width:9px; height:9px; border-radius:50%;
+    background: rgba(59,42,31,0.16);
+    transition: background .2s ease, transform .2s ease;
+  }
+  .dot.done{ background: var(--butter); }
+  .dot.current{ background: var(--tomato); transform:scale(1.35); }
+
+  .score-tag{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink-soft);
+    background: var(--white);
+    padding:6px 14px;
+    border-radius:999px;
+    box-shadow: 0 2px 0 rgba(59,42,31,0.08);
+  }
+
+  .instruction-zone{
+    text-align:center;
+    padding: 4px 8vw 4px;
+  }
+  .instruction{
+    font-size: clamp(20px, 4.6vw, 30px);
+    font-weight:600;
+    color:var(--ink);
+    line-height:1.25;
+  }
+  .instruction .accent-num{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+  }
+  .instruction.tomato-text .accent-num{ color:var(--tomato); }
+  .instruction.leaf-text .accent-num{ color:var(--leaf); }
+
+  .plate-zone{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:0;
+    padding: 6px 6vw;
+  }
+
+  .plate{
+    width: min(58vw, 300px);
+    height: min(58vw, 300px);
+    max-height: 40vh;
+    border-radius:50%;
+    background: radial-gradient(circle at 34% 30%, var(--white), #FFF3DF 68%, var(--plate-rim) 100%);
+    box-shadow:
+      0 20px 34px rgba(59,42,31,0.20),
+      inset 0 0 0 12px rgba(255,255,255,0.85),
+      inset 0 0 0 14px var(--plate-rim);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: clamp(4px, 2vw, 14px);
+    animation: plateIn .4s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes plateIn{
+    from{ opacity:0; transform: scale(.85); }
+    to{ opacity:1; transform: scale(1); }
+  }
+  .plate.pop{ animation: platePop .32s ease; }
+  @keyframes platePop{
+    0%{ transform:scale(1); }
+    45%{ transform:scale(1.06); }
+    100%{ transform:scale(1); }
+  }
+
+  .food{
+    font-size: clamp(70px, 22vw, 128px);
+    line-height:1;
+    filter: drop-shadow(0 6px 6px rgba(59,42,31,0.22));
+    animation: foodDrop .45s cubic-bezier(.2,.9,.3,1.2) backwards;
+  }
+  .plate .food:nth-child(1){ animation-delay: .02s; }
+  .plate .food:nth-child(2){ animation-delay: .12s; }
+  @keyframes foodDrop{
+    from{ opacity:0; transform: translateY(-18px) scale(.7); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  /* ---------- COUNTER LEDGE + BUTTONS ---------- */
+  .counter-ledge{
+    background: linear-gradient(180deg, var(--counter), var(--counter-dark));
+    padding: 22px 6vw max(22px, env(safe-area-inset-bottom));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: clamp(16px, 4vw, 34px);
+    box-shadow: inset 0 6px 10px rgba(59,42,31,0.12);
+    flex-wrap:wrap;
+  }
+  .counter-ledge::before{
+    content:"";
+  }
+
+  .num-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:800;
+    font-size: clamp(48px, 12vw, 76px);
+    color: var(--white);
+    border:none;
+    border-radius: 28px;
+    width: clamp(96px, 24vw, 150px);
+    height: clamp(96px, 24vw, 150px);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.16), 0 16px 26px rgba(0,0,0,0.18);
+    transition: transform .1s ease, box-shadow .1s ease, filter .15s ease;
+    position:relative;
+  }
+  .num-btn.one{ background: linear-gradient(180deg, #F0703F, var(--tomato)); }
+  .num-btn.two{ background: linear-gradient(180deg, #63A860, var(--leaf)); }
+  .num-btn:active{
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.16), 0 6px 10px rgba(0,0,0,0.16);
+  }
+  .num-btn.correct-flash{ animation: goodPulse .5s ease; }
+  .num-btn.wrong-flash{ animation: shake .4s ease; }
+  @keyframes goodPulse{
+    0%{ box-shadow: 0 8px 0 rgba(0,0,0,0.16), 0 16px 26px rgba(0,0,0,0.18); }
+    40%{ transform: scale(1.12) translateY(-4px); box-shadow: 0 0 0 10px rgba(244,183,64,0.35), 0 16px 26px rgba(0,0,0,0.18); }
+    100%{ transform: scale(1); }
+  }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    20%{ transform: translateX(-10px); }
+    40%{ transform: translateX(9px); }
+    60%{ transform: translateX(-6px); }
+    80%{ transform: translateX(4px); }
+  }
+
+  .feedback-zone{
+    min-height: 30px;
+    text-align:center;
+    padding: 2px 6vw 0;
+  }
+  .feedback{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size: clamp(16px, 3.6vw, 20px);
+    opacity:0;
+    transition: opacity .15s ease;
+  }
+  .feedback.show{ opacity:1; }
+  .feedback.good{ color: var(--leaf-dark); }
+  .feedback.retry{ color: var(--tomato-dark); }
+
+  /* ---------- RESULTS ---------- */
+  .results{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 6vh 8vw;
+    gap: 18px;
+  }
+  .results-emoji{ font-size: clamp(56px, 12vw, 90px); }
+  .results-score{
+    font-size: clamp(28px, 6vw, 40px);
+    color:var(--ink);
+  }
+  .results-msg{
+    font-size: clamp(16px, 3vw, 19px);
+    color: var(--ink-soft);
+    font-weight:600;
+    max-width: 32ch;
+  }
+  .results-buttons{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:10px;
+  }
+  .ghost-btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight:700;
+    font-size:17px;
+    background: var(--white);
+    color: var(--ink);
+    border: none;
+    padding: 14px 26px;
+    border-radius: 20px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 rgba(59,42,31,0.12), 0 8px 14px rgba(59,42,31,0.10);
+  }
+  .ghost-btn:active{ transform: translateY(3px); box-shadow: 0 1px 0 rgba(59,42,31,0.12); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: .001s !important; transition-duration: .001s !important; }
+  }
+
+  @media (max-height: 560px){
+    .plate{ width: min(38vh, 55vw); height: min(38vh, 55vw); }
+    .food{ font-size: clamp(50px, 16vh, 100px); }
+    .num-btn{ width: clamp(80px, 16vh, 120px); height: clamp(80px, 16vh, 120px); font-size: clamp(38px, 9vh, 60px); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ================= MENU ================= -->
+  <section class="view active menu" id="view-menu">
+    <div class="menu-emoji-row">🍎 🍪 🍓 🧁</div>
+    <h1 class="menu-title">Counting Kitchen</h1>
+    <p class="menu-sub">Learn to count 1 and 2 with tasty treats from the kitchen.</p>
+    <div class="menu-buttons">
+      <button class="mode-btn learn" id="btn-go-learn">
+        <span class="icon">📖</span>
+        Learn
+        <span class="label-sub">See 1 and 2</span>
+      </button>
+      <button class="mode-btn try" id="btn-go-try">
+        <span class="icon">🍽️</span>
+        Try
+        <span class="label-sub">Count it yourself</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= LEARN ================= -->
+  <section class="view scene" id="view-learn">
+    <div class="topbar">
+      <button class="back-btn" id="btn-back-learn">← Menu</button>
+      <div class="progress" id="learn-progress"></div>
+    </div>
+    <div class="instruction-zone">
+      <p class="instruction" id="learn-instruction"></p>
+    </div>
+    <div class="plate-zone">
+      <div class="plate" id="learn-plate"></div>
+    </div>
+    <div class="feedback-zone"><p class="feedback" id="learn-feedback">Nice tap! 🎉</p></div>
+    <div class="counter-ledge">
+      <button class="num-btn" id="learn-num-btn"></button>
+    </div>
+  </section>
+
+  <!-- ================= TRY ================= -->
+  <section class="view scene" id="view-try">
+    <div class="topbar">
+      <button class="back-btn" id="btn-back-try">← Menu</button>
+      <div class="progress" id="try-progress"></div>
+      <span class="score-tag" id="try-score">Score 0/8</span>
+    </div>
+    <div class="instruction-zone">
+      <p class="instruction" id="try-instruction">How many?</p>
+    </div>
+    <div class="plate-zone">
+      <div class="plate" id="try-plate"></div>
+    </div>
+    <div class="feedback-zone"><p class="feedback" id="try-feedback"></p></div>
+    <div class="counter-ledge">
+      <button class="num-btn one" id="try-btn-1">1</button>
+      <button class="num-btn two" id="try-btn-2">2</button>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section class="view results" id="view-results">
+    <div class="results-emoji" id="results-emoji">🏆</div>
+    <h2 class="results-score" id="results-score">You got 8 out of 8!</h2>
+    <p class="results-msg" id="results-msg">Amazing counting! You really know your numbers.</p>
+    <div class="results-buttons">
+      <button class="mode-btn try" id="btn-play-again">
+        <span class="icon">🔁</span>
+        Play again
+      </button>
+      <button class="ghost-btn" id="btn-results-menu">Back to menu</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Audio feedback (tiny, dependency-free) ---------------- */
+  var AudioCtx = window.AudioContext || window.webkitAudioContext;
+  var actx = null;
+  function tone(freqs, dur){
+    try{
+      if(!actx) actx = new AudioCtx();
+      var t0 = actx.currentTime;
+      freqs.forEach(function(f, i){
+        var osc = actx.createOscillator();
+        var gain = actx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        gain.gain.setValueAtTime(0.0001, t0 + i*0.09);
+        gain.gain.exponentialRampToValueAtTime(0.14, t0 + i*0.09 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i*0.09 + dur);
+        osc.connect(gain).connect(actx.destination);
+        osc.start(t0 + i*0.09);
+        osc.stop(t0 + i*0.09 + dur + 0.02);
+      });
+    }catch(e){ /* audio not available; fail silently */ }
+  }
+  function playGood(){ tone([523.25, 659.25, 783.99], 0.22); }
+  function playTap(){ tone([392], 0.14); }
+  function playRetry(){ tone([220, 174.6], 0.18); }
+
+  /* ---------------- Data ---------------- */
+  var LEARN_ONE = [
+    { emoji:'🍎', name:'apple' },
+    { emoji:'🍌', name:'banana' },
+    { emoji:'🍪', name:'cookie' },
+    { emoji:'🧁', name:'cupcake' }
+  ];
+  var LEARN_TWO = [
+    { emoji:'🍓', name:'strawberries' },
+    { emoji:'🍩', name:'donuts' },
+    { emoji:'🥕', name:'carrots' },
+    { emoji:'🍐', name:'pears' }
+  ];
+  var TRY_FOODS = [
+    { emoji:'🍎', name:'apples' }, { emoji:'🍌', name:'bananas' },
+    { emoji:'🍊', name:'oranges' }, { emoji:'🍪', name:'cookies' },
+    { emoji:'🧁', name:'cupcakes' }, { emoji:'🍩', name:'donuts' },
+    { emoji:'🥕', name:'carrots' }, { emoji:'🍐', name:'pears' },
+    { emoji:'🍓', name:'strawberries' }, { emoji:'🍉', name:'watermelon slices' },
+    { emoji:'🍍', name:'pineapples' }, { emoji:'🥨', name:'pretzels' },
+    { emoji:'🥚', name:'eggs' }, { emoji:'🌽', name:'corns' }
+  ];
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  /* ---------------- View switching ---------------- */
+  var views = {
+    menu: document.getElementById('view-menu'),
+    learn: document.getElementById('view-learn'),
+    try: document.getElementById('view-try'),
+    results: document.getElementById('view-results')
+  };
+  function showView(name){
+    Object.keys(views).forEach(function(k){ views[k].classList.remove('active'); });
+    views[name].classList.add('active');
+  }
+
+  function renderDots(container, total, currentIndex){
+    container.innerHTML = '';
+    for(var i=0;i<total;i++){
+      var d = document.createElement('span');
+      d.className = 'dot' + (i < currentIndex ? ' done' : '') + (i === currentIndex ? ' current' : '');
+      container.appendChild(d);
+    }
+  }
+
+  function renderPlate(container, foods){
+    container.innerHTML = '';
+    foods.forEach(function(f){
+      var span = document.createElement('span');
+      span.className = 'food';
+      span.textContent = f.emoji;
+      span.setAttribute('aria-hidden','true');
+      container.appendChild(span);
+    });
+  }
+
+  function popPlate(el){
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+
+  /* =========================================================
+     LEARN MODE
+     ========================================================= */
+  var learnSteps = [];
+  var learnIndex = 0;
+
+  function buildLearnSteps(){
+    learnSteps = [];
+    LEARN_ONE.forEach(function(f){ learnSteps.push({ number:1, items:[f] }); });
+    LEARN_TWO.forEach(function(f){ learnSteps.push({ number:2, items:[f,f] }); });
+  }
+
+  var learnInstructionEl = document.getElementById('learn-instruction');
+  var learnPlateEl = document.getElementById('learn-plate');
+  var learnProgressEl = document.getElementById('learn-progress');
+  var learnFeedbackEl = document.getElementById('learn-feedback');
+  var learnNumBtn = document.getElementById('learn-num-btn');
+
+  function startLearn(){
+    buildLearnSteps();
+    learnIndex = 0;
+    showView('learn');
+    showLearnStep();
+  }
+
+  function showLearnStep(){
+    var step = learnSteps[learnIndex];
+    var isOne = step.number === 1;
+
+    renderDots(learnProgressEl, learnSteps.length, learnIndex);
+    renderPlate(learnPlateEl, step.items);
+    popPlate(learnPlateEl);
+
+    learnInstructionEl.className = 'instruction ' + (isOne ? 'tomato-text' : 'leaf-text');
+    learnInstructionEl.innerHTML = 'This is <span class="accent-num">' + step.number + '</span>. Tap <span class="accent-num">' + step.number + '</span>.';
+
+    learnNumBtn.textContent = step.number;
+    learnNumBtn.className = 'num-btn ' + (isOne ? 'one' : 'two');
+    learnNumBtn.setAttribute('aria-label', 'Tap ' + step.number);
+
+    learnFeedbackEl.classList.remove('show');
+    learnNumBtn.disabled = false;
+  }
+
+  learnNumBtn.addEventListener('click', function(){
+    if(learnNumBtn.disabled) return;
+    learnNumBtn.disabled = true;
+    learnNumBtn.classList.remove('correct-flash');
+    void learnNumBtn.offsetWidth;
+    learnNumBtn.classList.add('correct-flash');
+    learnFeedbackEl.classList.add('show');
+    playGood();
+
+    setTimeout(function(){
+      learnIndex++;
+      if(learnIndex >= learnSteps.length){
+        showView('menu');
+      } else {
+        showLearnStep();
+      }
+    }, 620);
+  });
+
+  document.getElementById('btn-back-learn').addEventListener('click', function(){ showView('menu'); });
+
+  /* =========================================================
+     TRY MODE
+     ========================================================= */
+  var TRY_TOTAL = 8;
+  var tryTrials = [];
+  var tryIndex = 0;
+  var tryScore = 0;
+  var tryAwaitingAnswer = false;
+
+  function buildTryTrials(){
+    var counts = shuffle([1,1,1,1,2,2,2,2]);
+    var foods = shuffle(TRY_FOODS);
+    tryTrials = counts.map(function(count, i){
+      var f = foods[i % foods.length];
+      return { count: count, food: f };
+    });
+    tryTrials = shuffle(tryTrials);
+  }
+
+  var tryPlateEl = document.getElementById('try-plate');
+  var tryProgressEl = document.getElementById('try-progress');
+  var tryScoreEl = document.getElementById('try-score');
+  var tryFeedbackEl = document.getElementById('try-feedback');
+  var tryBtn1 = document.getElementById('try-btn-1');
+  var tryBtn2 = document.getElementById('try-btn-2');
+
+  function startTry(){
+    buildTryTrials();
+    tryIndex = 0;
+    tryScore = 0;
+    showView('try');
+    showTryTrial();
+  }
+
+  function showTryTrial(){
+    var trial = tryTrials[tryIndex];
+    var items = [];
+    for(var i=0;i<trial.count;i++){ items.push(trial.food); }
+
+    renderDots(tryProgressEl, TRY_TOTAL, tryIndex);
+    tryScoreEl.textContent = 'Score ' + tryScore + '/' + TRY_TOTAL;
+    renderPlate(tryPlateEl, items);
+    popPlate(tryPlateEl);
+
+    tryFeedbackEl.classList.remove('show','good','retry');
+    tryFeedbackEl.textContent = '';
+    tryAwaitingAnswer = true;
+    tryBtn1.disabled = false;
+    tryBtn2.disabled = false;
+  }
+
+  function handleTryAnswer(chosen, btnEl, otherBtnEl){
+    if(!tryAwaitingAnswer) return;
+    var trial = tryTrials[tryIndex];
+    var isCorrect = (chosen === trial.count);
+
+    if(isCorrect){
+      tryAwaitingAnswer = false;
+      tryBtn1.disabled = true;
+      tryBtn2.disabled = true;
+      tryScore++;
+      tryScoreEl.textContent = 'Score ' + tryScore + '/' + TRY_TOTAL;
+
+      btnEl.classList.remove('correct-flash'); void btnEl.offsetWidth; btnEl.classList.add('correct-flash');
+      tryFeedbackEl.className = 'feedback show good';
+      tryFeedbackEl.textContent = 'Yes! That\u2019s ' + trial.count + '. 🎉';
+      playGood();
+
+      setTimeout(function(){
+        tryIndex++;
+        if(tryIndex >= TRY_TOTAL){
+          finishTry();
+        } else {
+          showTryTrial();
+        }
+      }, 750);
+    } else {
+      btnEl.classList.remove('wrong-flash'); void btnEl.offsetWidth; btnEl.classList.add('wrong-flash');
+      tryFeedbackEl.className = 'feedback show retry';
+      tryFeedbackEl.textContent = 'Not quite \u2014 count again!';
+      playRetry();
+    }
+  }
+
+  tryBtn1.addEventListener('click', function(){ handleTryAnswer(1, tryBtn1, tryBtn2); });
+  tryBtn2.addEventListener('click', function(){ handleTryAnswer(2, tryBtn2, tryBtn1); });
+  document.getElementById('btn-back-try').addEventListener('click', function(){ showView('menu'); });
+
+  /* ---------------- Results ---------------- */
+  var resultsScoreEl = document.getElementById('results-score');
+  var resultsMsgEl = document.getElementById('results-msg');
+  var resultsEmojiEl = document.getElementById('results-emoji');
+
+  function finishTry(){
+    resultsScoreEl.textContent = 'You got ' + tryScore + ' out of ' + TRY_TOTAL + '!';
+    var msg, emoji;
+    if(tryScore === TRY_TOTAL){ msg = 'Amazing counting! You really know your numbers.'; emoji = '🏆'; }
+    else if(tryScore >= TRY_TOTAL*0.6){ msg = 'Great job! Keep practicing to count even faster.'; emoji = '🌟'; }
+    else { msg = 'Nice try! Visit Learn for another look at 1 and 2.'; emoji = '🍽️'; }
+    resultsMsgEl.textContent = msg;
+    resultsEmojiEl.textContent = emoji;
+    showView('results');
+  }
+
+  document.getElementById('btn-play-again').addEventListener('click', startTry);
+  document.getElementById('btn-results-menu').addEventListener('click', function(){ showView('menu'); });
+
+  /* ---------------- Menu entry points ---------------- */
+  document.getElementById('btn-go-learn').addEventListener('click', function(){ playTap(); startLearn(); });
+  document.getElementById('btn-go-try').addEventListener('click', function(){ playTap(); startTry(); });
+
+})();
+</script>
+</body>
+</html>
