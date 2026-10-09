@@ -9,6 +9,7 @@
     --bg1:#fdf6ec; --bg2:#eaf6f6; --pink:#ffc9de; --peach:#ffd9b3; --mint:#c8f0e0;
     --sky:#c9e8fb; --lav:#e3d3f7; --sun:#fff2b8; --ink:#4a4a5a; --green:#8fd6a8;
     --red:#ff9e9e; --grey:#d9d9e3; --shadow:0 6px 0 rgba(0,0,0,0.08);
+    --topbar:60px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;
@@ -16,7 +17,7 @@
     background:linear-gradient(160deg, var(--bg1), var(--bg2));
     color:var(--ink); touch-action:manipulation;}
   #app{position:relative; width:100%; height:100%; overflow:hidden;}
-  .screen{position:absolute; inset:0; display:none; flex-direction:column;
+  .screen{position:absolute; inset:var(--topbar) 0 0 0; display:none; flex-direction:column;
     align-items:center; justify-content:flex-start; padding:16px; overflow-y:auto;}
   .screen.active{display:flex;}
   h1{font-size:clamp(24px,5vw,42px); margin:8px 0 4px; text-align:center; color:#6b5b95;}
@@ -35,12 +36,16 @@
   .row{display:flex; flex-wrap:wrap; justify-content:center; align-items:center;}
   .card{background:#fffdfa; border-radius:28px; box-shadow:var(--shadow);
     padding:20px; margin:10px; max-width:640px; width:100%;}
-  #gearBtn{position:absolute; top:12px; right:12px; z-index:50; font-size:30px;
-    background:rgba(255,255,255,0.7); border:none; border-radius:50%; width:52px; height:52px;
-    box-shadow:var(--shadow); cursor:pointer;}
-  #navLeft{position:absolute; top:12px; left:12px; z-index:50; display:none; gap:8px;}
+  /* Top bar: back / home on the left, settings on the right, in their own strip above the screens */
+  #topBar{position:absolute; top:0; left:0; right:0; height:var(--topbar); z-index:50;
+    display:flex; align-items:center; justify-content:space-between; padding:0 12px;
+    background:rgba(255,255,255,0.55); border-bottom:1.5px solid rgba(0,0,0,0.06);}
+  #gearBtn{margin-left:auto; flex-shrink:0; font-size:24px; line-height:1;
+    background:#fff; border:none; border-radius:50%; width:44px; height:44px;
+    box-shadow:0 2px 0 rgba(0,0,0,0.08); cursor:pointer;}
+  #navLeft{display:none; gap:8px;}
   .navBtn{font-size:16px; font-weight:800; background:rgba(255,255,255,0.85); border:none;
-    border-radius:20px; height:44px; padding:0 16px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink);}
+    border-radius:20px; height:44px; padding:0 16px; box-shadow:0 2px 0 rgba(0,0,0,0.08); cursor:pointer; color:var(--ink);}
   .navBtn:active{transform:translateY(2px);}
   .stage{width:100%; max-width:560px; height:min(38vh,300px); background:#fff;
     border-radius:28px; box-shadow:var(--shadow); position:relative; overflow:hidden;
@@ -160,15 +165,43 @@
     #screen-game .revealPanel{margin-top:0; padding:12px 16px;}
     #screen-game #revealEmoji img{max-width:90px !important; max-height:90px !important;}
   }
+
+  /* ===== Clean, flat styling inside the start-screen menus ===== */
+  details.menu .menuBody{padding:0 18px 16px; align-items:stretch;}
+  details.menu .settingsGrid{gap:0; max-width:none;}
+  details.menu .settingsRow{background:none; box-shadow:none; border-radius:0; border-top:1.5px solid #efecf7;
+    padding:14px 0; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:8px;}
+  details.menu .settingsRow:first-child{border-top:none; padding-top:6px;}
+  details.menu .settingsRow label{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#8a7fb0;}
+  details.menu .settingsRow .opts{display:flex; flex-wrap:nowrap; gap:0; background:#f4f2fa; border-radius:12px; padding:3px;}
+  details.menu .settingsRow .opts .miniBtn{flex:1; background:transparent; border-radius:9px; padding:9px 6px;
+    font-size:13px; line-height:1.2; color:#5b5570;}
+  details.menu .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15);}
+  .rowHint{font-size:12px; line-height:1.4; color:#7d7894;}
+  .nameInput{width:100%; border:2px solid #e6e3f0; border-radius:12px; padding:10px 12px; font-size:15px; font-family:inherit; background:#fff;}
+  details.menu .sub{font-size:13px; line-height:1.45; color:#7d7894; text-align:left; margin:2px 0 12px;}
+  details.menu .mediaManager{max-width:none; gap:10px;}
+  details.menu .mediaRow.mediaCard{background:#faf9fe; border:1.5px solid #ece9f5; box-shadow:none; border-radius:16px; padding:12px; gap:10px;}
+  details.menu .mediaFieldLabel{display:none;}
+  details.menu .mediaActions{gap:8px;}
+  details.menu .mediaActions .mediaField{flex:1 1 180px;}
+  details.menu .mediaFieldInput{width:100%; background:#fff; border-color:#e6e3f0;}
+  details.menu .miniBtn{background:#ece9f5; color:#5b5570; font-size:13px; padding:8px 12px; border-radius:12px;}
+  details.menu .settingsRow .opts .miniBtn{background:transparent;}
+  details.menu .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff;}
+  details.menu .miniBtn.primaryMini{background:var(--green); color:#fff;}
+  details.menu .miniBtn:disabled{opacity:.6;}
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="confettiCanvas"></canvas>
-  <button id="gearBtn" title="Teacher Settings">⚙️</button>
-  <div id="navLeft">
-    <button id="backBtn" class="navBtn" title="Back one step">← Back</button>
-    <button id="homeBtn" class="navBtn" title="Go to main page">🏠 Home</button>
+  <div id="topBar">
+    <div id="navLeft">
+      <button id="backBtn" class="navBtn" title="Back one step">← Back</button>
+      <button id="homeBtn" class="navBtn" title="Go to main page">🏠 Home</button>
+    </div>
+    <button id="gearBtn" title="Teacher Settings">⚙️</button>
   </div>
 
   <!-- START SCREEN -->
@@ -272,15 +305,44 @@ const SOUNDS={
 function playSound(name){ if(SOUNDS[name]) SOUNDS[name](); }
 
 /* ================= SPEECH ================= */
-function speak(text){
-  if(!SETTINGS.speech) return;
+/* Voice choice: browsers include a mix of robotic and natural voices. By default we pick the most natural
+   English voice available on this device; a teacher can choose a different one in Settings. */
+function englishVoices(){
+  try{ return window.speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang)); }catch(e){ return []; }
+}
+function voiceScore(v){
+  const n=v.name, l=v.lang.replace('_','-');
+  let sc=0;
+  if(/natural|neural/i.test(n)) sc+=100;                 // Microsoft Edge "Natural" voices
+  if(/premium|enhanced|siri/i.test(n)) sc+=70;           // Apple downloaded / Siri voices
+  if(/^google (us|uk)/i.test(n)) sc+=55;                 // Chrome's Google voices
+  if(/\b(samantha|ava|allison|serena|daniel|karen|moira|tessa|aria|jenny|guy|libby|sonia)\b/i.test(n)) sc+=35;
+  if(/online/i.test(n)) sc+=15;
+  if(/^en-(US|GB)$/i.test(l)) sc+=10; else if(/^en-(AU|SG|CA|IE|NZ)$/i.test(l)) sc+=6;
+  if(/compact|espeak|festival|pico/i.test(n)) sc-=80;    // low-quality engines
+  if(/\b(albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|junior|kathy|organ|princess|ralph|trinoids|whisper|wobble|zarvox|fred)\b/i.test(n)) sc-=300; // novelty voices
+  return sc;
+}
+function rankedVoices(){ return englishVoices().slice().sort((a,b)=>voiceScore(b)-voiceScore(a)); }
+function chosenVoice(){
+  const list=englishVoices();
+  if(SETTINGS.voiceName){ const m=list.find(v=>v.name===SETTINGS.voiceName); if(m) return m; }
+  return rankedVoices()[0]||null;
+}
+function speak(text,opts){
+  if(!SETTINGS.speech && !(opts&&opts.force)) return;
   try{
     window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
-    u.rate=0.92; u.pitch=1.05;
+    const v=chosenVoice();
+    if(v){ u.voice=v; u.lang=v.lang; }
+    u.rate=0.9; u.pitch=1;
     window.speechSynthesis.speak(u);
   }catch(e){}
 }
+try{ window.speechSynthesis.addEventListener('voiceschanged',()=>{
+  if(document.getElementById('screen-settings')&&document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+}); }catch(e){}
 function unlockAudioAndSpeech(){
   ensureAudio();
   if(!speechUnlocked){
@@ -610,7 +672,8 @@ const DEFAULT_SETTINGS={
   rounds:8,
   sound:true,
   speech:true,
-  studentName:''
+  studentName:'',
+  voiceName:''   // '' = pick the most natural English voice available
 };
 let SETTINGS=loadSettings();
 let OVERRIDES=loadOverrides();
@@ -689,13 +752,13 @@ function renderGameplay(grid){
     modeOpts.appendChild(b);
   });
   modeRow.appendChild(modeOpts); grid.appendChild(modeRow);
-  const modeHint=document.createElement('div'); modeHint.style.cssText='font-size:12px;opacity:.65;text-align:center;margin-top:-4px;';
+  const modeHint=document.createElement('div'); modeHint.className='rowHint';
   modeHint.textContent = SETTINGS.mode==='answer'
     ? 'Event happens → question is read aloud → student picks the correct answer.'
     : SETTINGS.mode==='ask'
     ? 'Event happens → student picks the correct WH-word to ask.'
     : 'Event happens → student picks the WH-word, then picks the correct answer.';
-  grid.appendChild(modeHint);
+  modeRow.appendChild(modeHint);
 
   const supportRow=document.createElement('div'); supportRow.className='settingsRow';
   supportRow.innerHTML='<label>Support Level</label>';
@@ -717,9 +780,9 @@ function renderGameplay(grid){
   });
   buildRow.appendChild(buildOpts); grid.appendChild(buildRow);
   if(SETTINGS.mode==='answer'){
-    const buildHint=document.createElement('div'); buildHint.style.cssText='font-size:12px;opacity:.6;text-align:center;margin-top:-6px;';
-    buildHint.textContent='(Only used in "Ask the Question" or "Ask then Answer" modes)';
-    grid.appendChild(buildHint);
+    const buildHint=document.createElement('div'); buildHint.className='rowHint';
+    buildHint.textContent='Only used in "Ask the Question" or "Ask then Answer" modes.';
+    buildRow.appendChild(buildHint);
   }
 
   const roundsRow=document.createElement('div'); roundsRow.className='settingsRow';
@@ -736,7 +799,7 @@ function renderGameplay(grid){
   nameRow.innerHTML='<label>Student Name (optional)</label>';
   const nameInput=document.createElement('input');
   nameInput.type='text'; nameInput.value=SETTINGS.studentName; nameInput.placeholder='e.g. Siqi';
-  nameInput.style.cssText='border:2px solid #eee;border-radius:12px;padding:8px 10px;font-size:15px;width:160px;';
+  nameInput.className='nameInput';
   nameInput.oninput=(e)=>{ SETTINGS.studentName=e.target.value; saveSettings(); };
   nameRow.appendChild(nameInput); grid.appendChild(nameRow);
 }
@@ -763,6 +826,28 @@ function renderSettings(){
     speechOpts.appendChild(b);
   });
   speechRow.appendChild(speechOpts); grid.appendChild(speechRow);
+
+  const voiceRow=document.createElement('div'); voiceRow.className='settingsRow';
+  voiceRow.innerHTML='<label>Voice</label>';
+  const voiceOpts=document.createElement('div'); voiceOpts.className='opts';
+  const sel=document.createElement('select');
+  sel.style.cssText='border:2px solid #e6e3f0;border-radius:12px;padding:8px 10px;font-size:14px;font-family:inherit;background:#fff;max-width:230px;';
+  const ranked=rankedVoices();
+  const auto=document.createElement('option'); auto.value='';
+  auto.textContent='Auto — most natural available'+(ranked[0]?' ('+ranked[0].name+')':'');
+  sel.appendChild(auto);
+  ranked.forEach(v=>{ const o=document.createElement('option'); o.value=v.name; o.textContent=v.name+' ('+v.lang+')'; sel.appendChild(o); });
+  sel.value=SETTINGS.voiceName&&ranked.some(v=>v.name===SETTINGS.voiceName)?SETTINGS.voiceName:'';
+  sel.onchange=()=>{ SETTINGS.voiceName=sel.value; saveSettings(); speak('What is the boy doing?',{force:true}); };
+  const testBtn=document.createElement('button'); testBtn.className='miniBtn'; testBtn.textContent='🔊 Test';
+  testBtn.onclick=()=>{ unlockAudioAndSpeech(); speak('What is the boy doing?',{force:true}); };
+  voiceOpts.appendChild(sel); voiceOpts.appendChild(testBtn);
+  voiceRow.appendChild(voiceOpts); grid.appendChild(voiceRow);
+  if(!ranked.length){
+    const hint=document.createElement('div'); hint.className='rowHint'; hint.style.padding='0 6px';
+    hint.textContent='No English voices were found on this device yet. They may still be loading — reopen Settings in a moment.';
+    grid.appendChild(hint);
+  }
 }
 /* Builds the two collapsible menus on the start screen */
 function initStartMenus(){
@@ -855,7 +940,7 @@ function renderMediaManager(){
     urlInput.placeholder='Paste a YouTube, Google Drive or .mp4 link (leave empty to use the default)';
     urlInput.value=custom?custom.url:'';
     urlField.appendChild(urlLab); urlField.appendChild(urlInput);
-    const saveUrlBtn=document.createElement('button'); saveUrlBtn.className='miniBtn';
+    const saveUrlBtn=document.createElement('button'); saveUrlBtn.className='miniBtn primaryMini';
     saveUrlBtn.textContent=custom?'Update URL':'Save URL';
     saveUrlBtn.onclick=async ()=>{
       const val=urlInput.value.trim();
