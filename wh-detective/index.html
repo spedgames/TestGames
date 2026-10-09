@@ -518,10 +518,15 @@ function captureOnce(url,id,altId,cors){
     const cx=canvas.getContext('2d',{willReadFrequently:true});
     const vid=document.createElement('video');
     if(cors) vid.crossOrigin='anonymous';
-    vid.muted=true; vid.playsInline=true; vid.preload='auto'; vid.src=url;
+    vid.muted=true; vid.playsInline=true; vid.preload='metadata'; vid.src=url;
     const seekTo=(t)=>new Promise((res)=>{
-      if(Math.abs(vid.currentTime-t)<0.01){ res(); return; }
-      const on=()=>{ vid.removeEventListener('seeked',on); res(); };
+      const ready=()=>{   // phones may not have the frame yet right after seeking, so wait briefly for it
+        if(vid.readyState>=2){ res(); return; }
+        const on2=()=>{ vid.removeEventListener('loadeddata',on2); res(); };
+        vid.addEventListener('loadeddata',on2); setTimeout(res,3000);
+      };
+      if(Math.abs(vid.currentTime-t)<0.01){ ready(); return; }
+      const on=()=>{ vid.removeEventListener('seeked',on); ready(); };
       vid.addEventListener('seeked',on);
       vid.currentTime=t;
     });
@@ -535,7 +540,7 @@ function captureOnce(url,id,altId,cors){
       for(let i=0;i<px.length;i+=16){ sum+=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2]; n++; }
       return {data:canvas.toDataURL('image/jpeg',0.8), lum:sum/n};
     };
-    vid.onloadeddata=async()=>{
+    const begin=async()=>{
       loaded=true;
       if(started) return; started=true;
       try{
@@ -551,13 +556,16 @@ function captureOnce(url,id,altId,cors){
           if(g.lum>bestLum){ best=g.data; bestLum=g.lum; }
           if(explicit || g.lum>=THUMB_MIN_BRIGHTNESS) break;
         }
-        finish({ok:true,thumb:best,error:null});
+        if(bestLum<4) best=null;   // all frames black/blank (some phones don't draw frames) — use the default picture instead
+        finish({ok:true,thumb:best,error:best?null:'A picture could not be created for this video on this device.'});
       }catch(e){
         finish({ok:true,thumb:null,error:'The video plays, but this website does not allow taking a picture from it.'});
       }
     };
+    vid.addEventListener('loadedmetadata',begin); vid.addEventListener('loadeddata',begin);
     vid.onerror=()=>finish({ok:false,thumb:null,error:describeVideoError(vid)});
-    timer=setTimeout(()=>finish({ok:loaded,thumb:best,error:loaded?null:'Timed out loading the video.'}),12000);
+    // Slow or restricted connection: don't drop the video, it may still play fine — just skip its picture.
+    timer=setTimeout(()=>finish({ok:true,thumb:best,error:best?null:'The picture was not ready in time.'}),15000);
   });
 }
 async function captureThumbFromVideoSrc(url,id,altId){
@@ -577,6 +585,23 @@ function saveThumbOverride(key,url){
   try{ localStorage.setItem(THUMB_KEY,JSON.stringify(o)); return true; }catch(e){ return false; }
 }
 
+/* Registers every video straight away (before any slow picture-checking), so a round that starts
+   early — or on a slow phone connection — still plays the video instead of the default animation. */
+function seedMedia(){
+  const overrides=loadThumbOverrides(), customs=loadCustomUrls();
+  const mk=(url)=>{
+    const info=parseVideoUrl(url); if(!info) return null;
+    const e={url,kind:info.kind,thumb:overrides[url]||null,defaultThumb:null,cors:false,error:null};
+    if(info.kind!=='file'){ e.embedUrl=info.embedUrl; e.thumb=overrides[url]||info.thumbUrl; e.defaultThumb=info.thumbUrl; }
+    return e;
+  };
+  SCENARIOS.forEach(sc=>{
+    const cu=customs[sc.id];
+    if(cu){ const e=mk(cu); if(e) customMediaCache[sc.id]=Object.assign({type:'video'},e); }
+    const vs=(DEFAULT_VIDEO_URLS[sc.id]||[]).map(mk).filter(Boolean);
+    if(vs.length){ bundledMediaCache[sc.id]={variants:vs}; setBundledCurrent(sc.id,Math.floor(Math.random()*vs.length)); }
+  });
+}
 async function probeScenarioMedia(sc){
   const overrides=loadThumbOverrides();
   const entryFor=async(url)=>{
@@ -591,8 +616,8 @@ async function probeScenarioMedia(sc){
     const r=await captureThumbFromVideoSrc(url,fileKeyFromUrl(url),sc.id);
     return r.ok?{url,kind:'file',thumb:overrides[url]||r.thumb,defaultThumb:r.thumb,cors:r.cors,error:r.error}:{failed:true,error:r.error};
   };
-  delete customMediaCache[sc.id]; delete bundledMediaCache[sc.id];
   const customUrl=loadCustomUrls()[sc.id];
+  if(!customUrl) delete customMediaCache[sc.id];
   if(customUrl){
     const e=await entryFor(customUrl);
     if(!e.failed) customMediaCache[sc.id]=Object.assign({type:'video'},e);
@@ -601,9 +626,12 @@ async function probeScenarioMedia(sc){
   }
   const found=(await Promise.all((DEFAULT_VIDEO_URLS[sc.id]||[]).map(entryFor))).filter(e=>!e.failed);
   if(found.length){
+    const prevUrl=bundledMediaCache[sc.id]&&bundledMediaCache[sc.id].url;
+    let idx=found.findIndex(v=>v.url===prevUrl);
+    if(idx<0) idx=Math.floor(Math.random()*found.length);
     bundledMediaCache[sc.id]={variants:found};
-    setBundledCurrent(sc.id,Math.floor(Math.random()*found.length));
-  }
+    setBundledCurrent(sc.id,idx);
+  } else { delete bundledMediaCache[sc.id]; }
 }
 async function probeAllMedia(){ await Promise.all(SCENARIOS.map(probeScenarioMedia)); }
 
@@ -685,6 +713,7 @@ const DEFAULT_SETTINGS={
 };
 let SETTINGS=loadSettings();
 let OVERRIDES=loadOverrides();
+seedMedia();
 probeAllMedia().then(()=>renderMediaManager());
 
 function loadSettings(){
@@ -791,6 +820,13 @@ function renderGameplay(grid){
     opts.appendChild(b);
   });
   supportRow.appendChild(opts); grid.appendChild(supportRow);
+  const supportHint=document.createElement('div'); supportHint.className='rowHint';
+  supportHint.textContent = SETTINGS.support==='guided'
+    ? 'Two choices, and the correct one glows. Best for first tries.'
+    : SETTINGS.support==='practice'
+    ? 'Three choices, no glow. A hint appears after two wrong tries.'
+    : 'Five choices, no glow. A hint appears after two wrong tries.';
+  supportRow.appendChild(supportHint);
 
   const buildRow=document.createElement('div'); buildRow.className='settingsRow';
   buildRow.innerHTML='<label>Build Full Question</label>';
@@ -801,11 +837,12 @@ function renderGameplay(grid){
     buildOpts.appendChild(b);
   });
   buildRow.appendChild(buildOpts); grid.appendChild(buildRow);
-  if(SETTINGS.mode==='answer'){
-    const buildHint=document.createElement('div'); buildHint.className='rowHint';
-    buildHint.textContent='Only used in "Ask the Question" or "Ask then Answer" modes.';
-    buildRow.appendChild(buildHint);
-  }
+  const buildHint=document.createElement('div'); buildHint.className='rowHint';
+  buildHint.textContent = (SETTINGS.buildQuestion
+    ? 'After choosing the WH-word, the student taps word tiles to build the full question.'
+    : 'The student only chooses the WH-word or the answer, with no question building.')
+    + (SETTINGS.mode==='answer' ? ' (Not used in Answer mode.)' : '');
+  buildRow.appendChild(buildHint);
 
   const roundsRow=document.createElement('div'); roundsRow.className='settingsRow';
   roundsRow.innerHTML='<label>Rounds per Session</label>';
@@ -1188,20 +1225,25 @@ function renderStageMedia(scenario){
       stageEl.appendChild(note);
     };
     vid.onerror=showFallback;
-    vid.onloadeddata=()=>{
-      const playPromise=vid.play();
-      if(playPromise && playPromise.catch){
-        playPromise.catch(()=>{
-          // Autoplay blocked — let the student/teacher tap to start it.
-          const tap=document.createElement('div'); tap.className='tapToPlay';
-          tap.innerHTML='<div class="playIcon">▶️</div>';
-          tap.onclick=()=>{ vid.play(); tap.remove(); };
-          wrap.appendChild(tap);
-        });
-      }
+    let tapShown=false, blocked=false;
+    const showTap=()=>{
+      if(tapShown) return; tapShown=true;
+      const tap=document.createElement('div'); tap.className='tapToPlay';
+      tap.innerHTML='<div class="playIcon">▶️</div>';
+      tap.onclick=()=>{ vid.play(); tap.remove(); };
+      wrap.appendChild(tap);
     };
-    // If nothing loads within 4s, treat as failed rather than leaving a blank box.
-    setTimeout(()=>{ if(vid.readyState===0) showFallback(); },4000);
+    const tryPlay=()=>{
+      const pr=vid.play();
+      if(pr && pr.catch) pr.catch((err)=>{
+        if(err && err.name==='NotAllowedError'){ blocked=true; showTap(); }   // phone blocked autoplay — tap to start
+      });
+    };
+    vid.preload='auto';
+    tryPlay();                      // phones may not fire load events until play is requested
+    vid.onloadeddata=tryPlay;
+    // Only give up if nothing at all arrives after a generous wait (slow phone connection).
+    setTimeout(()=>{ if(vid.readyState===0 && !blocked) showFallback(); },12000);
     return;
   }
   renderDefaultIcon(scenario);
