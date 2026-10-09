@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Something Happened! WH-Detective</title>
+<style>
+  :root{
+    --bg1:#fdf6ec; --bg2:#eaf6f6; --pink:#ffc9de; --peach:#ffd9b3; --mint:#c8f0e0;
+    --sky:#c9e8fb; --lav:#e3d3f7; --sun:#fff2b8; --ink:#4a4a5a; --green:#8fd6a8;
+    --red:#ff9e9e; --grey:#d9d9e3; --shadow:0 6px 0 rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;
+    font-family:-apple-system, "Segoe UI Rounded", "Segoe UI", Verdana, sans-serif;
+    background:linear-gradient(160deg, var(--bg1), var(--bg2));
+    color:var(--ink); touch-action:manipulation;}
+  #app{position:relative; width:100%; height:100%; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:none; flex-direction:column;
+    align-items:center; justify-content:flex-start; padding:16px; overflow-y:auto;}
+  .screen.active{display:flex;}
+  h1{font-size:clamp(24px,5vw,42px); margin:8px 0 4px; text-align:center; color:#6b5b95;}
+  h2{font-size:clamp(18px,3.5vw,28px); margin:6px 0; text-align:center;}
+  p.sub{font-size:clamp(14px,2.5vw,20px); text-align:center; margin:0 0 12px; opacity:.8;}
+  .bigBtn{
+    font-size:clamp(18px,3vw,26px); font-weight:700; border:none; border-radius:24px;
+    padding:18px 32px; margin:8px; cursor:pointer; box-shadow:var(--shadow);
+    transition:transform .08s ease; min-width:140px; color:var(--ink);
+  }
+  .bigBtn:active{transform:translateY(5px); box-shadow:0 1px 0 rgba(0,0,0,0.08);}
+  .btn-pink{background:var(--pink);} .btn-peach{background:var(--peach);}
+  .btn-mint{background:var(--mint);} .btn-sky{background:var(--sky);}
+  .btn-lav{background:var(--lav);} .btn-sun{background:var(--sun);}
+  .btn-grey{background:var(--grey);}
+  .row{display:flex; flex-wrap:wrap; justify-content:center; align-items:center;}
+  .card{background:#fffdfa; border-radius:28px; box-shadow:var(--shadow);
+    padding:20px; margin:10px; max-width:640px; width:100%;}
+  #gearBtn{position:absolute; top:12px; right:12px; z-index:50; font-size:30px;
+    background:rgba(255,255,255,0.7); border:none; border-radius:50%; width:52px; height:52px;
+    box-shadow:var(--shadow); cursor:pointer;}
+  #navLeft{position:absolute; top:12px; left:12px; z-index:50; display:none; gap:8px;}
+  .navBtn{font-size:16px; font-weight:800; background:rgba(255,255,255,0.85); border:none;
+    border-radius:20px; height:44px; padding:0 16px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink);}
+  .navBtn:active{transform:translateY(2px);}
+  .stage{width:100%; max-width:560px; height:min(38vh,300px); background:#fff;
+    border-radius:28px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; margin:10px 0;}
+  .sceneEmoji{font-size:clamp(60px,12vw,110px); position:relative;
+    width:100%; height:100%; display:flex; align-items:center; justify-content:center;}
+  .sceneEmoji svg{width:clamp(90px,22vw,180px); height:clamp(90px,22vw,180px);}
+  .sceneEmoji img, .sceneEmoji video{max-width:92%; max-height:92%; border-radius:18px; object-fit:contain;
+    width:auto; height:auto; background:#111;}
+  .videoWrap{position:relative; width:92%; height:92%; display:flex; align-items:center; justify-content:center;}
+  .videoWrap video{width:100%; height:100%; border-radius:18px; object-fit:contain; background:#111;}
+  .videoWrap iframe{width:100%; height:100%; border:0; border-radius:18px; background:#111;}
+  .tapToPlay{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.25); border-radius:18px; cursor:pointer;}
+  .tapToPlay .playIcon{width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.9);
+    display:flex; align-items:center; justify-content:center; font-size:28px; box-shadow:var(--shadow);}
+  .fsBtn{position:absolute; top:8px; right:8px; width:38px; height:38px; border:none; border-radius:10px;
+    background:rgba(255,255,255,0.85); font-size:18px; cursor:pointer; box-shadow:var(--shadow); z-index:5;
+    display:flex; align-items:center; justify-content:center;}
+  .fsBtn:active{transform:translateY(2px);}
+  .videoErrorNote{position:absolute; bottom:6px; left:6px; right:6px; background:rgba(255,255,255,0.92);
+    border-radius:10px; padding:4px 8px; font-size:11px; text-align:center; color:#b91c1c; font-weight:700;}
+  .mediaWarning{font-size:11px; color:#b91c1c; font-weight:700; margin-top:2px;}
+  .previewBtn{margin-left:auto;}
+  .previewSlot:empty{display:none;}
+  .choiceIcon{display:inline-flex; align-items:center; justify-content:center; margin-bottom:6px;}
+  .choiceIcon svg{width:clamp(40px,7vw,64px); height:clamp(40px,7vw,64px);}
+  .choiceIcon img{width:clamp(44px,8vw,70px); height:clamp(44px,8vw,70px); object-fit:cover; border-radius:12px;}
+  .speechBubble{background:#fff; border-radius:22px; padding:14px 22px; box-shadow:var(--shadow);
+    font-size:clamp(16px,3vw,22px); text-align:center; max-width:560px; margin:6px 0 14px; font-weight:700;}
+  .choiceGrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:14px; width:100%; max-width:640px; margin-top:6px;}
+  .whChoice{font-size:clamp(18px,2.6vw,24px); font-weight:800; border:none; border-radius:22px;
+    padding:18px 16px; box-shadow:var(--shadow); cursor:pointer; transition:transform .08s ease;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    min-height:110px; text-align:center; line-height:1.28;}
+  .whChoice.longText{font-size:clamp(14px,2vw,18px); line-height:1.3;}
+  .whChoice:active{transform:translateY(5px); box-shadow:0 1px 0 rgba(0,0,0,0.08);}
+  .whChoice.correctGlow{animation:glow 1.1s infinite;}
+  @keyframes glow{0%,100%{box-shadow:var(--shadow), 0 0 0 0 rgba(255,214,102,0);}
+    50%{box-shadow:var(--shadow), 0 0 22px 8px rgba(255,214,102,0.9);}}
+  .revealPanel{background:#fff; border-radius:26px; padding:18px 22px; box-shadow:var(--shadow);
+    text-align:center; max-width:560px; margin-top:10px;}
+  .revealPanel .emoji{font-size:56px;}
+  .progressBar{width:100%; max-width:500px; height:16px; background:#eee; border-radius:10px;
+    overflow:hidden; margin:6px 0 14px;}
+  .progressFill{height:100%; background:linear-gradient(90deg,#ffc9de,#c8f0e0); width:0%;
+    transition:width .4s ease;}
+  .settingsGrid{display:flex; flex-direction:column; gap:10px; width:100%; max-width:520px;}
+  .settingsRow{display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:#fff; border-radius:18px; padding:10px 16px; box-shadow:var(--shadow); flex-wrap:wrap;}
+  .settingsRow label{font-weight:700; font-size:15px;}
+  .settingsRow .opts{display:flex; gap:6px; flex-wrap:wrap;}
+  .miniBtn{border:none; border-radius:14px; padding:8px 14px; font-weight:700; cursor:pointer;
+    background:var(--grey); font-size:14px;}
+  .miniBtn.on{background:var(--green); color:#fff;}
+  .levelChecks{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
+  .levelChk{display:flex; align-items:center; gap:6px; background:#fff; border-radius:16px;
+    padding:8px 12px; box-shadow:var(--shadow); font-weight:700; font-size:14px; cursor:pointer;}
+  .levelChk input{width:18px;height:18px;}
+  #confettiCanvas{position:absolute; inset:0; pointer-events:none; z-index:60;}
+  .tokenTray{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:8px; max-width:560px;}
+  .token{background:#fff; border-radius:14px; padding:10px 14px; font-weight:700; font-size:16px;
+    box-shadow:var(--shadow); cursor:pointer;}
+  .token.used{opacity:.25; pointer-events:none;}
+  .sentenceStrip{min-height:56px; width:100%; max-width:560px; background:#fff; border-radius:16px;
+    box-shadow:var(--shadow); display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    padding:8px 12px; margin-top:10px; font-weight:700; font-size:18px;}
+  .starRow{font-size:34px; letter-spacing:6px;}
+  footer.tiny{font-size:11px; opacity:.5; margin-top:auto; padding-top:10px; text-align:center;}
+  .mediaManager{display:flex; flex-direction:column; gap:10px; width:100%; max-width:520px;}
+  .mediaRow.mediaCard{display:flex; flex-direction:column; align-items:stretch; gap:8px;
+    background:#fff; border-radius:18px; padding:12px 14px; box-shadow:var(--shadow);}
+  .mediaTopLine{display:flex; align-items:center; gap:12px;}
+  .mediaThumb{width:54px; height:54px; border-radius:12px; background:#f5f5f5; display:flex;
+    align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;}
+  .mediaThumb svg{width:80%; height:80%;} .mediaThumb img{width:100%; height:100%; object-fit:cover;}
+  .mediaTopLine .status{font-size:12px; opacity:.65;}
+  .mediaFields{display:flex; flex-direction:column; gap:6px;}
+  .mediaField{display:flex; align-items:center; gap:8px;}
+  .mediaFieldLabel{font-size:12px; font-weight:700; opacity:.7; width:60px; flex-shrink:0;}
+  .mediaFieldInput{flex:1; border:2px solid #eee; border-radius:12px; padding:7px 10px;
+    font-size:14px; font-family:inherit;}
+  .mediaActions{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .mediaActions .mediaField{flex:1 1 100%;}
+
+  /* ===== Game screen layout ===== */
+  /* Portrait: wrappers are transparent, so the original stacked layout is unchanged */
+  .gameLayout, .gameMedia, .gameSide{display:contents;}
+
+  /* Landscape: video fixed on the left, question + answers on the right */
+  @media (orientation:landscape){
+    #screen-game{overflow:hidden; padding:12px 16px;}
+    #screen-game .progressBar{margin:2px 0 10px; flex-shrink:0;}
+    #screen-game .gameLayout{display:flex; flex-direction:row; gap:16px; width:100%;
+      flex:1; min-height:0; align-items:stretch;}
+    #screen-game .gameMedia{display:flex; flex:1.25; min-width:0; align-items:center; justify-content:center;}
+    #screen-game .stage{max-width:none; height:100%; margin:0;}
+    #screen-game .gameSide{display:flex; flex-direction:column; flex:1; min-width:0;
+      overflow-y:auto; align-items:center; justify-content:center; justify-content:safe center;
+      padding:8px 4px 8px 0;}
+    #screen-game .speechBubble{max-width:100%; width:100%; margin:0 0 10px;}
+    #screen-game .choiceGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; max-width:100%;}
+    #screen-game .whChoice{min-height:78px; padding:10px 10px; gap:4px;}
+    #screen-game .choiceIcon{margin-bottom:2px;}
+    #screen-game .choiceIcon svg{width:clamp(32px,5vw,48px); height:clamp(32px,5vw,48px);}
+    #screen-game .choiceIcon img{width:clamp(36px,6vw,52px); height:clamp(36px,6vw,52px);}
+    #screen-game .tokenTray, #screen-game .sentenceStrip, #screen-game .revealPanel{max-width:100%; width:100%;}
+    #screen-game .revealPanel{margin-top:0; padding:12px 16px;}
+    #screen-game #revealEmoji img{max-width:90px !important; max-height:90px !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="confettiCanvas"></canvas>
+  <button id="gearBtn" title="Teacher Settings">⚙️</button>
+  <div id="navLeft">
+    <button id="backBtn" class="navBtn" title="Back one step">← Back</button>
+    <button id="homeBtn" class="navBtn" title="Go to main page">🏠 Home</button>
+  </div>
+
+  <!-- START SCREEN -->
+  <div class="screen active" id="screen-start">
+    <h1>🕵️ Something Happened!</h1>
+    <p class="sub">A WH-Question Detective Game</p>
+    <div class="stage"><div class="sceneEmoji" id="startEmoji">🔍</div></div>
+    <button class="bigBtn btn-mint" id="startPlayBtn">▶️ Start Playing</button>
+    <footer class="tiny">Rainbow Centre · AHS Game Library · Offline single-file game</footer>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div class="screen" id="screen-settings">
+    <h2>⚙️ Teacher Settings</h2>
+    <div class="settingsGrid" id="settingsGrid"></div>
+    <div class="row" style="margin-top:14px;">
+      <button class="bigBtn btn-mint" id="settingsSaveBtn">✅ Save &amp; Back</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="screen" id="screen-game">
+    <div class="progressBar"><div class="progressFill" id="progressFill"></div></div>
+    <div class="gameLayout">
+      <div class="gameMedia">
+        <div class="stage"><div class="sceneEmoji" id="gameEmoji">❓</div></div>
+      </div>
+      <div class="gameSide">
+        <div class="speechBubble" id="speechBubble">Get ready...</div>
+        <div class="choiceGrid" id="choiceGrid"></div>
+        <div class="tokenTray" id="tokenTray" style="display:none;"></div>
+        <div class="sentenceStrip" id="sentenceStrip" style="display:none;"></div>
+        <div class="revealPanel" id="revealPanel" style="display:none;">
+          <div class="emoji" id="revealEmoji">🎉</div>
+          <div id="revealAnswer" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:#4a4a5a;margin:6px 0 2px;"></div>
+          <div id="revealText"></div>
+          <button class="bigBtn btn-mint" id="nextRoundBtn">Next ➜</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY SCREEN -->
+  <div class="screen" id="screen-summary">
+    <h1>🎉 Great Detective Work!</h1>
+    <div class="starRow" id="starRow">⭐⭐⭐</div>
+    <p class="sub" id="summaryText"></p>
+    <div class="row">
+      <button class="bigBtn btn-mint" id="playAgainBtn">▶️ Play Again</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ================= AUDIO ENGINE ================= */
+let actx=null, audioUnlocked=false, speechUnlocked=false;
+function ensureAudio(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx && actx.state==='suspended'){ actx.resume(); } }
+function tone(freq,delay,dur,type='sine',vol=0.22,freqEnd=null){
+  if(!actx||!SETTINGS.sound) return;
+  const t0=actx.currentTime+delay;
+  const osc=actx.createOscillator(); const gain=actx.createGain();
+  osc.type=type; osc.frequency.setValueAtTime(freq,t0);
+  if(freqEnd!==null) osc.frequency.linearRampToValueAtTime(freqEnd,t0+dur);
+  gain.gain.setValueAtTime(0,t0);
+  gain.gain.linearRampToValueAtTime(vol,t0+Math.min(0.03,dur/4));
+  gain.gain.linearRampToValueAtTime(0,t0+dur);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function sequence(list){ list.forEach(n=>tone(n.freq,n.delay,n.dur,n.type||'sine',n.vol||0.22,n.freqEnd||null)); }
+function noiseBurst(delay,dur,filterFreq=1200,vol=0.28,filterType='lowpass'){
+  if(!actx||!SETTINGS.sound) return;
+  const t0=actx.currentTime+delay;
+  const bufferSize=Math.floor(actx.sampleRate*dur);
+  const buffer=actx.createBuffer(1,bufferSize,actx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){ data[i]=(Math.random()*2-1)*(1-i/bufferSize); }
+  const src=actx.createBufferSource(); src.buffer=buffer;
+  const filt=actx.createBiquadFilter(); filt.type=filterType; filt.frequency.value=filterFreq;
+  const gain=actx.createGain(); gain.gain.setValueAtTime(vol,t0); gain.gain.linearRampToValueAtTime(0,t0+dur);
+  src.connect(filt); filt.connect(gain); gain.connect(actx.destination);
+  src.start(t0); src.stop(t0+dur+0.02);
+}
+const SOUNDS={
+  crash:()=>{ noiseBurst(0,0.25,900,0.3); tone(180,0.02,0.3,'triangle',0.2,90); },
+  pop:()=>{ tone(700,0,0.12,'sine',0.22,500); },
+  chirp:()=>{ tone(1200,0,0.09,'sine',0.18,1900); tone(1500,0.13,0.09,'sine',0.16,2200); },
+  buzz:()=>{ tone(120,0,0.35,'square',0.15,60); },
+  footsteps:()=>{ sequence([{freq:150,delay:0,dur:0.08,type:'square',vol:0.15},{freq:150,delay:0.22,dur:0.08,type:'square',vol:0.15},{freq:150,delay:0.44,dur:0.08,type:'square',vol:0.15}]); },
+  knock:()=>{ sequence([{freq:140,delay:0,dur:0.1,type:'square',vol:0.22},{freq:140,delay:0.28,dur:0.1,type:'square',vol:0.22}]); },
+  chime:()=>{ sequence([{freq:660,delay:0,dur:0.2,type:'sine',vol:0.2},{freq:880,delay:0.15,dur:0.25,type:'sine',vol:0.2}]); },
+  bell:()=>{ tone(880,0,0.6,'sine',0.2,440); },
+  siren:()=>{ tone(500,0,0.5,'sawtooth',0.16,900); tone(900,0.5,0.5,'sawtooth',0.16,500); tone(500,1.0,0.5,'sawtooth',0.16,900); },
+  rain:()=>{ noiseBurst(0,1.4,2200,0.16,'bandpass'); noiseBurst(0.3,1.1,1800,0.13,'bandpass'); },
+  sad:()=>{ tone(300,0,0.35,'sine',0.15,220); tone(220,0.35,0.4,'sine',0.13,160); },
+  whistle:()=>{ tone(1500,0,0.5,'sine',0.2,1800); },
+  engine:()=>{ tone(90,0,0.6,'sawtooth',0.12,110); },
+  fanfare:()=>{ sequence([{freq:523,delay:0,dur:0.18,type:'triangle',vol:0.2},{freq:659,delay:0.16,dur:0.18,type:'triangle',vol:0.2},{freq:784,delay:0.32,dur:0.3,type:'triangle',vol:0.22}]); },
+  splash:()=>{ noiseBurst(0,0.35,1500,0.3); },
+  success:()=>{ sequence([{freq:523,delay:0,dur:0.14,type:'sine',vol:0.2},{freq:659,delay:0.12,dur:0.14,type:'sine',vol:0.2},{freq:784,delay:0.24,dur:0.14,type:'sine',vol:0.2},{freq:1047,delay:0.36,dur:0.25,type:'sine',vol:0.22}]); },
+  gentle:()=>{ tone(300,0,0.18,'sine',0.14,260); tone(260,0.2,0.2,'sine',0.13,220); },
+  tada:()=>{ sequence([{freq:523,delay:0,dur:0.12,type:'triangle',vol:0.2},{freq:659,delay:0.1,dur:0.12,type:'triangle',vol:0.2},{freq:784,delay:0.2,dur:0.12,type:'triangle',vol:0.2},{freq:1047,delay:0.32,dur:0.4,type:'triangle',vol:0.24}]); }
+};
+function playSound(name){ if(SOUNDS[name]) SOUNDS[name](); }
+
+/* ================= SPEECH ================= */
+function speak(text){
+  if(!SETTINGS.speech) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=0.92; u.pitch=1.05;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function unlockAudioAndSpeech(){
+  ensureAudio();
+  if(!speechUnlocked){
+    try{ const u=new SpeechSynthesisUtterance(' '); window.speechSynthesis.speak(u); }catch(e){}
+    speechUnlocked=true;
+  }
+  audioUnlocked=true;
+}
+
+/* ================= CONFETTI ================= */
+const confettiCanvas=document.getElementById('confettiCanvas');
+const cctx=confettiCanvas.getContext('2d');
+let confettiPieces=[];
+function resizeCanvas(){ confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight; }
+window.addEventListener('resize',resizeCanvas); resizeCanvas();
+function burstConfetti(){
+  const colors=['#ffc9de','#ffd9b3','#c8f0e0','#c9e8fb','#e3d3f7','#fff2b8'];
+  for(let i=0;i<70;i++){
+    confettiPieces.push({
+      x:confettiCanvas.width/2, y:confettiCanvas.height*0.35,
+      vx:(Math.random()-0.5)*10, vy:Math.random()*-8-2,
+      g:0.35, size:6+Math.random()*6, color:colors[Math.floor(Math.random()*colors.length)],
+      rot:Math.random()*360, vr:(Math.random()-0.5)*10, life:100
+    });
+  }
+  if(!confettiRAF) animateConfetti();
+}
+let confettiRAF=null;
+function animateConfetti(){
+  cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+  confettiPieces.forEach(p=>{
+    p.vy+=p.g*0.15; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life--;
+    cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot*Math.PI/180);
+    cctx.fillStyle=p.color; cctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); cctx.restore();
+  });
+  confettiPieces=confettiPieces.filter(p=>p.life>0 && p.y<confettiCanvas.height+40);
+  if(confettiPieces.length>0){ confettiRAF=requestAnimationFrame(animateConfetti); }
+  else { confettiRAF=null; cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
+}
+
+/* ================= VIDEOS (by URL) ================= */
+/* Every scenario can show a video that is loaded from a web address (URL).
+   1) A teacher can type a URL for any scenario in Settings (saved on this device only) — this wins.
+   2) Otherwise the default URL(s) below are used.
+   3) If neither exists or loads, the default pictogram is shown. Nothing breaks. */
+const VIDEO_BASE='https://ahsresources.github.io/AHSGameLibrary/Literacy/something-happened/media/';
+/* Default video(s) for each scenario. List several URLs to give a scenario more than one video —
+   one is picked at random each time it comes up (never the same one twice in a row).
+   A URL that fails to load is skipped. */
+const DEFAULT_VIDEO_URLS={
+  cup_break:   [VIDEO_BASE+'cup_break.mp4'],
+  egg_crack:   [VIDEO_BASE+'egg_crack.mp4'],
+  green_light: [VIDEO_BASE+'green_light.mp4'],
+  kids_play:   [VIDEO_BASE+'kids_play.mp4'],
+  bus_arrives: [VIDEO_BASE+'bus_arrives.mp4', VIDEO_BASE+'bus_stop.mp4'],
+};
+
+let customMediaCache={};  // scenarioId -> {type:'video', url, thumb, defaultThumb, cors, error}  (teacher's own URL)
+let bundledMediaCache={}; // scenarioId -> current default video {url, thumb, defaultThumb, cors, variants, idx}
+
+/* ---- Teacher-entered URLs (this device only) ---- */
+const URLS_KEY='whdet_video_urls';
+function loadCustomUrls(){ try{ return JSON.parse(localStorage.getItem(URLS_KEY))||{}; }catch(e){ return {}; } }
+function saveCustomUrl(id,url){
+  const o=loadCustomUrls();
+  if(url) o[id]=url; else delete o[id];
+  try{ localStorage.setItem(URLS_KEY,JSON.stringify(o)); return true; }catch(e){ return false; }
+}
+
+/* ---- Default snapshot time (seconds into the video) ----
+   Add a line per video to choose which moment is used as the default picture.
+   Use a scenario id (e.g. kids_play) or a video's file name without .mp4 (e.g. bus_stop).
+   Anything not listed is checked automatically (see captureThumbFromVideoSrc).
+   A frame picked in Settings (📸 Use This Frame) always overrides these. */
+const DEFAULT_THUMB_TIME=0.3;
+const THUMB_TIMES={
+  cup_break: 5,
+  kids_play: 8,
+  // egg_crack: 1.5,
+};
+function thumbTimeFor(id,duration,altId){
+  const t=(id in THUMB_TIMES)?THUMB_TIMES[id]
+        :(altId&&(altId in THUMB_TIMES))?THUMB_TIMES[altId]:DEFAULT_THUMB_TIME;
+  const max=Math.max(0,(duration||1)-0.05);
+  return Math.min(t,max);
+}
+/* Works out what kind of link was pasted: a direct video file, a YouTube link or a Google Drive link.
+   YouTube and Drive videos can't be played like a normal file, so they are shown in an embedded player
+   and their picture comes from the site's own thumbnail (a frame can't be picked). */
+function parseVideoUrl(raw){
+  const url=(raw||'').trim();
+  let u; try{ u=new URL(url); }catch(e){ return null; }
+  if(!/^https?:$/.test(u.protocol)) return null;
+  const host=u.hostname.replace(/^www\.|^m\./,'');
+  // YouTube
+  let yt=null, start=0;
+  if(host==='youtu.be') yt=u.pathname.slice(1).split('/')[0];
+  else if(/(^|\.)youtube(-nocookie)?\.com$/.test(host)){
+    if(u.pathname==='/watch') yt=u.searchParams.get('v');
+    else { const m=u.pathname.match(/^\/(shorts|embed|live|v)\/([\w-]{6,})/); if(m) yt=m[2]; }
+  }
+  if(yt){
+    yt=yt.replace(/[^\w-]/g,'');
+    const t=u.searchParams.get('t')||u.searchParams.get('start');
+    if(t){ const m=t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/); if(m) start=(+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0); }
+    return {kind:'youtube',
+      embedUrl:'https://www.youtube-nocookie.com/embed/'+yt+'?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1'+(start?'&start='+start:''),
+      thumbUrl:'https://img.youtube.com/vi/'+yt+'/mqdefault.jpg'};
+  }
+  // Google Drive
+  if(host==='drive.google.com' || host==='drive.usercontent.google.com' || host==='docs.google.com'){
+    let id=null;
+    const m=u.pathname.match(/\/file\/d\/([\w-]+)/);
+    if(m) id=m[1]; else id=u.searchParams.get('id');
+    if(id){
+      id=id.replace(/[^\w-]/g,'');
+      return {kind:'drive',
+        embedUrl:'https://drive.google.com/file/d/'+id+'/preview',
+        thumbUrl:'https://drive.google.com/thumbnail?id='+id+'&sz=w400'};
+    }
+    return null;
+  }
+  return {kind:'file'};
+}
+function loadImageOk(src){
+  return new Promise(res=>{
+    const img=new Image(); let done=false;
+    const fin=v=>{ if(!done){ done=true; res(v); } };
+    img.onload=()=>fin(img.naturalWidth>40);
+    img.onerror=()=>fin(false);
+    setTimeout(()=>fin(false),8000);
+    img.src=src;
+  });
+}
+function fileKeyFromUrl(url){
+  try{ return decodeURIComponent(new URL(url).pathname.split('/').pop()).replace(/\.[^.]+$/,''); }catch(e){ return url; }
+}
+
+function setBundledCurrent(id,idx){
+  const c=bundledMediaCache[id]; if(!c) return;
+  const variants=c.variants;
+  bundledMediaCache[id]=Object.assign({},variants[idx],{variants,idx});
+}
+function bundledSetThumb(id,thumb){
+  const c=bundledMediaCache[id]; if(!c) return;
+  c.thumb=thumb; c.variants[c.idx].thumb=thumb;
+}
+function rotateBundledVideo(id){
+  const c=bundledMediaCache[id];
+  if(!c||c.variants.length<2) return;
+  let n; do{ n=Math.floor(Math.random()*c.variants.length); }while(n===c.idx);
+  setBundledCurrent(id,n);
+}
+
+/* Loads a video from its URL and takes its default snapshot.
+   - If a time is set for it in THUMB_TIMES, that exact moment is used.
+   - Otherwise several moments are tried and the first one that isn't (nearly) black is used.
+   Resolves {ok, thumb, error}: ok = the video loads; thumb may be null if the picture couldn't be taken. */
+const THUMB_MIN_BRIGHTNESS=25; // 0 = pure black, 255 = pure white
+function captureOnce(url,id,altId,cors){
+  return new Promise((resolve)=>{
+    let settled=false, started=false, best=null, bestLum=-1, timer=null, loaded=false;
+    const finish=(val)=>{ if(settled) return; settled=true; clearTimeout(timer); resolve(val); };
+    const canvas=document.createElement('canvas'); canvas.width=200; canvas.height=200;
+    const cx=canvas.getContext('2d',{willReadFrequently:true});
+    const vid=document.createElement('video');
+    if(cors) vid.crossOrigin='anonymous';
+    vid.muted=true; vid.playsInline=true; vid.preload='auto'; vid.src=url;
+    const seekTo=(t)=>new Promise((res)=>{
+      if(Math.abs(vid.currentTime-t)<0.01){ res(); return; }
+      const on=()=>{ vid.removeEventListener('seeked',on); res(); };
+      vid.addEventListener('seeked',on);
+      vid.currentTime=t;
+    });
+    const grab=()=>{
+      const scale=Math.max(200/vid.videoWidth,200/vid.videoHeight);
+      const w=vid.videoWidth*scale,h=vid.videoHeight*scale;
+      cx.fillStyle='#000'; cx.fillRect(0,0,200,200);
+      cx.drawImage(vid,(200-w)/2,(200-h)/2,w,h);
+      const px=cx.getImageData(0,0,200,200).data;   // throws if the website doesn't allow frame capture
+      let sum=0,n=0;
+      for(let i=0;i<px.length;i+=16){ sum+=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2]; n++; }
+      return {data:canvas.toDataURL('image/jpeg',0.8), lum:sum/n};
+    };
+    vid.onloadeddata=async()=>{
+      loaded=true;
+      if(started) return; started=true;
+      try{
+        const dur=vid.duration||1, last=Math.max(0,dur-0.05);
+        const explicit=(id in THUMB_TIMES)||(altId&&(altId in THUMB_TIMES));
+        const times = explicit ? [thumbTimeFor(id,dur,altId)]
+          : [...new Set([0.3,1,2,3,5,8,12,dur*0.25,dur*0.5,dur*0.75]
+              .filter(t=>t<=last).map(t=>Math.round(t*100)/100))].sort((x,y)=>x-y);
+        if(!times.length) times.push(0);
+        for(const t of times){
+          await seekTo(t);
+          const g=grab();
+          if(g.lum>bestLum){ best=g.data; bestLum=g.lum; }
+          if(explicit || g.lum>=THUMB_MIN_BRIGHTNESS) break;
+        }
+        finish({ok:true,thumb:best,error:null});
+      }catch(e){
+        finish({ok:true,thumb:null,error:'The video plays, but this website does not allow taking a picture from it.'});
+      }
+    };
+    vid.onerror=()=>finish({ok:false,thumb:null,error:describeVideoError(vid)});
+    timer=setTimeout(()=>finish({ok:loaded,thumb:best,error:loaded?null:'Timed out loading the video.'}),12000);
+  });
+}
+async function captureThumbFromVideoSrc(url,id,altId){
+  let r=await captureOnce(url,id,altId,true);          // best case: website allows frame capture (CORS)
+  if(r.ok) return Object.assign(r,{cors:true});
+  const plain=await captureOnce(url,id,altId,false);   // fallback: plays fine, but no automatic picture
+  if(plain.ok) return {ok:true,thumb:null,cors:false,error:'The video plays, but this website does not allow taking a picture from it.'};
+  return {ok:false,thumb:null,cors:false,error:r.error||plain.error};
+}
+
+/* Teacher-chosen snapshot, stored per video URL (this device only) */
+const THUMB_KEY='whdet_thumbs';
+function loadThumbOverrides(){ try{ return JSON.parse(localStorage.getItem(THUMB_KEY))||{}; }catch(e){ return {}; } }
+function saveThumbOverride(key,url){
+  const o=loadThumbOverrides();
+  if(url) o[key]=url; else delete o[key];
+  try{ localStorage.setItem(THUMB_KEY,JSON.stringify(o)); return true; }catch(e){ return false; }
+}
+
+async function probeScenarioMedia(sc){
+  const overrides=loadThumbOverrides();
+  const entryFor=async(url)=>{
+    const info=parseVideoUrl(url);
+    if(!info) return {failed:true,error:'That is not a valid web address.'};
+    if(info.kind!=='file'){
+      const okImg=await loadImageOk(info.thumbUrl);
+      const name=info.kind==='youtube'?'YouTube':'Google Drive';
+      if(!okImg) return {failed:true,error:'Could not find this '+name+' video. '+(info.kind==='drive'?'Make sure sharing is set to "Anyone with the link can view".':'Check the link, and that the video is public or unlisted.')};
+      return {url,kind:info.kind,embedUrl:info.embedUrl,thumb:info.thumbUrl,defaultThumb:info.thumbUrl,cors:false,error:null};
+    }
+    const r=await captureThumbFromVideoSrc(url,fileKeyFromUrl(url),sc.id);
+    return r.ok?{url,kind:'file',thumb:overrides[url]||r.thumb,defaultThumb:r.thumb,cors:r.cors,error:r.error}:{failed:true,error:r.error};
+  };
+  delete customMediaCache[sc.id]; delete bundledMediaCache[sc.id];
+  const customUrl=loadCustomUrls()[sc.id];
+  if(customUrl){
+    const e=await entryFor(customUrl);
+    if(!e.failed) customMediaCache[sc.id]=Object.assign({type:'video'},e);
+    else customMediaCache[sc.id]={type:'video',url:customUrl,thumb:null,defaultThumb:null,cors:false,error:e.error,broken:true};
+    if(!e.failed) return;                       // a working teacher URL always wins
+  }
+  const found=(await Promise.all((DEFAULT_VIDEO_URLS[sc.id]||[]).map(entryFor))).filter(e=>!e.failed);
+  if(found.length){
+    bundledMediaCache[sc.id]={variants:found};
+    setBundledCurrent(sc.id,Math.floor(Math.random()*found.length));
+  }
+}
+async function probeAllMedia(){ await Promise.all(SCENARIOS.map(probeScenarioMedia)); }
+
+/* Single place every part of the game asks "what should this scenario show?" —
+   teacher's own URL first (if it works), then the default video, then nothing (default pictogram). */
+function getScenarioMedia(id){
+  const c=customMediaCache[id];
+  if(c && !c.broken) return {type:'video',kind:c.kind||'file',embedUrl:c.embedUrl,url:c.url,thumb:c.thumb,source:'custom'};
+  if(bundledMediaCache[id]) return {type:'video',kind:bundledMediaCache[id].kind||'file',embedUrl:bundledMediaCache[id].embedUrl,url:bundledMediaCache[id].url,thumb:bundledMediaCache[id].thumb,source:'bundled'};
+  return null;
+}
+
+/* ================= SCENARIO DATA ================= */
+const WH_LABELS={what:'What?',who:'Who?',where:'Where?',why:'Why?',when:'When?'};
+const WH_COLORS={what:'btn-sky',who:'btn-pink',where:'btn-mint',why:'btn-peach',when:'btn-lav'};
+const WH_ICONS={what:'❓',who:'🧑',where:'📍',why:'🤔',when:'🕒'};
+
+/* Hand-built flat-style pictogram icons (bold outline, high contrast) —
+   these render identically on every device, unlike system emoji which
+   vary by OS/font and can show the wrong glyph. */
+const ICONS={
+ pen:`<svg viewBox="0 0 100 100"><g transform="rotate(-35 50 50)"><rect x="30" y="15" width="26" height="55" rx="8" fill="#7EC8E3" stroke="#4a4a5a" stroke-width="3"/><rect x="30" y="38" width="26" height="8" fill="#FFD166"/><polygon points="30,70 56,70 43,88" fill="#4a4a5a"/></g></svg>`,
+ pen_dropped:`<svg viewBox="0 0 100 100"><g transform="translate(15,55) rotate(-8)"><rect x="0" y="0" width="55" height="17" rx="8" fill="#7EC8E3" stroke="#4a4a5a" stroke-width="3"/><rect x="18" y="0" width="8" height="17" fill="#FFD166"/><polygon points="55,0 55,17 70,8" fill="#4a4a5a"/></g><ellipse cx="45" cy="85" rx="28" ry="6" fill="#d9d9e3"/><line x1="20" y1="30" x2="14" y2="20" stroke="#b8bfca" stroke-width="3" stroke-linecap="round"/><line x1="30" y1="20" x2="27" y2="8" stroke="#b8bfca" stroke-width="3" stroke-linecap="round"/><line x1="42" y1="18" x2="42" y2="6" stroke="#b8bfca" stroke-width="3" stroke-linecap="round"/></svg>`,
+ cup:`<svg viewBox="0 0 100 100"><path d="M22 35h44v28a22 22 0 0 1-44 0z" fill="#FFF" stroke="#4a4a5a" stroke-width="3"/><rect x="27" y="42" width="34" height="16" fill="#8B5E3C"/><path d="M66 45c14 0 14 22 0 22" fill="none" stroke="#4a4a5a" stroke-width="4"/></svg>`,
+ cup_broken:`<svg viewBox="0 0 100 100"><path d="M15 55h30v18a15 15 0 0 1-30 0z" fill="#FFF" stroke="#4a4a5a" stroke-width="3"/><path d="M52 48h32v16a16 16 0 0 1-32 0z" fill="#FFF" stroke="#4a4a5a" stroke-width="3"/><rect x="20" y="60" width="20" height="10" fill="#8B5E3C"/><rect x="57" y="52" width="22" height="10" fill="#8B5E3C"/><polygon points="45,26 53,40 45,38 51,50 43,46" fill="#FF6B6B"/><circle cx="82" cy="30" r="4" fill="#B0B7C3"/><circle cx="90" cy="20" r="3" fill="#B0B7C3"/><circle cx="10" cy="35" r="3" fill="#B0B7C3"/></svg>`,
+ egg:`<svg viewBox="0 0 100 100"><ellipse cx="50" cy="55" rx="26" ry="34" fill="#FFF9E8" stroke="#4a4a5a" stroke-width="3"/></svg>`,
+ egg_cracked:`<svg viewBox="0 0 100 100"><ellipse cx="50" cy="55" rx="26" ry="34" fill="#FFF9E8" stroke="#4a4a5a" stroke-width="3"/><polyline points="30,45 42,55 34,60 52,68 44,75" fill="none" stroke="#4a4a5a" stroke-width="3"/><circle cx="52" cy="62" r="10" fill="#FFC93C" stroke="#4a4a5a" stroke-width="2"/></svg>`,
+ traffic_red:`<svg viewBox="0 0 100 100"><rect x="34" y="8" width="32" height="76" rx="8" fill="#4a4a5a"/><circle cx="50" cy="26" r="9" fill="#FF5A5A"/><circle cx="50" cy="46" r="9" fill="#6b6a4a"/><circle cx="50" cy="66" r="9" fill="#3f5a45"/><rect x="46" y="84" width="8" height="12" fill="#4a4a5a"/></svg>`,
+ traffic_green:`<svg viewBox="0 0 100 100"><rect x="34" y="8" width="32" height="76" rx="8" fill="#4a4a5a"/><circle cx="50" cy="26" r="9" fill="#6b4a4a"/><circle cx="50" cy="46" r="9" fill="#6b6a4a"/><circle cx="50" cy="66" r="9" fill="#6BCB77"/><rect x="46" y="84" width="8" height="12" fill="#4a4a5a"/></svg>`,
+ bus_stop:`<svg viewBox="0 0 100 100"><rect x="46" y="20" width="6" height="60" fill="#8D99AE"/><rect x="28" y="18" width="44" height="26" rx="4" fill="#4C9AFF" stroke="#4a4a5a" stroke-width="3"/><text x="50" y="37" font-size="13" fill="#fff" text-anchor="middle" font-family="Arial" font-weight="bold">BUS</text></svg>`,
+ bus:`<svg viewBox="0 0 100 100"><rect x="8" y="35" width="80" height="32" rx="8" fill="#FFC93C" stroke="#4a4a5a" stroke-width="3"/><rect x="16" y="42" width="16" height="12" fill="#EAF6FB" stroke="#4a4a5a" stroke-width="2"/><rect x="38" y="42" width="16" height="12" fill="#EAF6FB" stroke="#4a4a5a" stroke-width="2"/><rect x="60" y="42" width="16" height="12" fill="#EAF6FB" stroke="#4a4a5a" stroke-width="2"/><circle cx="26" cy="70" r="7" fill="#4a4a5a"/><circle cx="70" cy="70" r="7" fill="#4a4a5a"/></svg>`,
+ toy_blocks:`<svg viewBox="0 0 100 100"><rect x="14" y="58" width="26" height="26" rx="3" fill="#FF8FA3" stroke="#4a4a5a" stroke-width="3"/><rect x="42" y="58" width="26" height="26" rx="3" fill="#4C9AFF" stroke="#4a4a5a" stroke-width="3"/><rect x="28" y="30" width="26" height="26" rx="3" fill="#FFC93C" stroke="#4a4a5a" stroke-width="3"/></svg>`,
+ toy_blocks_ball:`<svg viewBox="0 0 100 100"><rect x="14" y="58" width="26" height="26" rx="3" fill="#FF8FA3" stroke="#4a4a5a" stroke-width="3"/><rect x="42" y="58" width="26" height="26" rx="3" fill="#4C9AFF" stroke="#4a4a5a" stroke-width="3"/><rect x="28" y="30" width="26" height="26" rx="3" fill="#FFC93C" stroke="#4a4a5a" stroke-width="3"/><circle cx="80" cy="72" r="13" fill="#6BCB77" stroke="#4a4a5a" stroke-width="3"/><path d="M69 68 Q80 76 91 68" fill="none" stroke="#fff" stroke-width="3"/></svg>`
+};
+function iconMarkup(key){ return ICONS[key] || ''; }
+
+const SCENARIOS=[
+ // LEVEL 1 - WHAT (only)
+ {id:'cup_break',level:1,wh:'what',beforeIcon:'cup',afterIcon:'cup_broken',anim:'fall',sound:'crash',
+  prompt:'Something happened! Ask a question.',question:'What happened?',
+  tokens:['What','happened','?'], answer:'The glass cup dropped and broke', answerIcon:'cup_broken',
+  revealIcon:'cup_broken', reveal:'Be careful holding glass!'},
+ {id:'egg_crack',level:1,wh:'what',beforeIcon:'egg',afterIcon:'egg_cracked',anim:'fall',sound:'pop',
+  prompt:'Look at the video! Ask a question.',question:'What happened?',
+  tokens:['What','happened','?'], answer:'An egg was cracked into a pan', answerIcon:'egg_cracked',
+  revealIcon:'egg_cracked', reveal:'An adult can start cooking!'},
+ {id:'green_light',level:1,wh:'what',beforeIcon:'traffic_red',afterIcon:'traffic_green',anim:'bounce',sound:'chirp',
+  prompt:'Look at the video! Ask a question.',question:'What is the lady doing?',
+  tokens:['What','is','the','lady','doing','?'], answer:'She is waiting for Green Man', answerIcon:'traffic_green',
+  revealIcon:'traffic_green', reveal:'Do not cross when it is Red Man!'},
+ {id:'bus_arrives',level:1,wh:'what',beforeIcon:'bus_stop',afterIcon:'bus',anim:'walk-in',sound:'engine',
+  prompt:'Something has arrived! Ask a question.',question:'What has arrived?',
+  tokens:['What','has','arrived','?'], answer:'The bus arrived', answerIcon:'bus',
+  revealIcon:'bus', reveal:"It's the school bus, ready to take everyone home!"},
+ {id:'kids_play',level:1,wh:'what',beforeIcon:'toy_blocks',afterIcon:'toy_blocks_ball',anim:'shake',sound:'buzz',
+  prompt:'Look at the video! Ask a question.',question:'What happened?',
+  tokens:['What','happened','?'], answer:'Children are sharing toys', answerIcon:'toy_blocks_ball',
+  revealIcon:'toy_blocks_ball', reveal:"It's fun to share and play together!"}
+];
+
+/* ================= SETTINGS ================= */
+const LEVEL_INFO=[
+ {level:1,wh:'what',label:'Level 1 · WHAT (concrete events)'},
+ {level:2,wh:'who',label:'Level 2 · WHO (people entering/helping)'},
+ {level:3,wh:'where',label:'Level 3 · WHERE (movement & change)'},
+ {level:4,wh:'why',label:'Level 4 · WHY (needs inference)'},
+ {level:5,wh:'when',label:'Level 5 · WHEN (time & routines)'}
+];
+const DEFAULT_SETTINGS={
+  levels:{1:true,2:true,3:false,4:false,5:false},
+  mode:'answer', // ask | answer | both
+  support:'guided', // guided | practice | independent
+  buildQuestion:false,
+  rounds:8,
+  sound:true,
+  speech:true,
+  studentName:''
+};
+let SETTINGS=loadSettings();
+let OVERRIDES=loadOverrides();
+probeAllMedia();
+
+function loadSettings(){
+  try{ const s=localStorage.getItem('whdet_settings'); if(s) return Object.assign({},DEFAULT_SETTINGS,JSON.parse(s)); }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+}
+function saveSettings(){ try{ localStorage.setItem('whdet_settings',JSON.stringify(SETTINGS)); }catch(e){} }
+
+/* ---- Per-scenario text overrides (name / question / answer / feedback) ---- */
+function loadOverrides(){
+  try{ const s=localStorage.getItem('whdet_overrides'); if(s) return JSON.parse(s); }catch(e){}
+  return {};
+}
+function saveOverrides(){ try{ localStorage.setItem('whdet_overrides',JSON.stringify(OVERRIDES)); }catch(e){} }
+function computeTokens(q){
+  let text=(q||'').trim();
+  let trailing='';
+  const m=text.match(/([?.!]+)$/);
+  if(m){ trailing=m[1]; text=text.slice(0,text.length-trailing.length).trim(); }
+  const words=text.split(/\s+/).filter(Boolean);
+  return trailing? [...words,trailing] : words;
+}
+function getContent(sc){
+  const o=OVERRIDES[sc.id]||{};
+  const question=o.question && o.question.trim() ? o.question.trim() : sc.question;
+  const answer=o.answer && o.answer.trim() ? o.answer.trim() : sc.answer;
+  const hasCustomText=!!(o.label || o.question || o.answer || o.reveal || o.prompt);
+  // Once any field is customized, don't fall back to the original built-in
+  // feedback/prompt sentences — they almost certainly won't match the new content.
+  const reveal = o.reveal && o.reveal.trim() ? o.reveal.trim()
+    : (hasCustomText ? '' : sc.reveal);
+  const prompt = o.prompt && o.prompt.trim() ? o.prompt.trim()
+    : (hasCustomText ? 'Something happened! Ask a question.' : sc.prompt);
+  return {
+    label: o.label && o.label.trim() ? o.label.trim() : sc.answer,
+    question,
+    answer,
+    reveal,
+    prompt,
+    tokens: (o.question && o.question.trim()) ? computeTokens(question) : sc.tokens
+  };
+}
+
+/* ================= SCREEN NAV ================= */
+let screenHistory=[];
+function showScreen(id,opts){
+  const push = !opts || opts.push!==false;
+  const current=document.querySelector('.screen.active');
+  if(push && current && current.id!==id){ screenHistory.push(current.id); }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('navLeft').style.display = (id==='screen-start')?'none':'flex';
+}
+function goBack(){
+  const prev=screenHistory.pop();
+  showScreen(prev||'screen-start',{push:false});
+}
+document.getElementById('backBtn').addEventListener('click',()=>{ stopGame(); goBack(); });
+document.getElementById('homeBtn').addEventListener('click',()=>{ stopGame(); screenHistory=[]; showScreen('screen-start',{push:false}); });
+document.getElementById('gearBtn').addEventListener('click',()=>{ unlockAudioAndSpeech(); renderSettings(); showScreen('screen-settings'); });
+
+/* ================= SETTINGS RENDER ================= */
+function renderSettings(){
+  const grid=document.getElementById('settingsGrid');
+  grid.innerHTML='';
+
+  const modeRow=document.createElement('div'); modeRow.className='settingsRow';
+  modeRow.innerHTML='<label>Practice Mode</label>';
+  const modeOpts=document.createElement('div'); modeOpts.className='opts';
+  [['answer','Answer the Question'],['ask','Ask the Question'],['both','Ask then Answer']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.mode===val?' on':''); b.textContent=label;
+    b.onclick=()=>{ SETTINGS.mode=val; renderSettings(); };
+    modeOpts.appendChild(b);
+  });
+  modeRow.appendChild(modeOpts); grid.appendChild(modeRow);
+  const modeHint=document.createElement('div'); modeHint.style.cssText='font-size:12px;opacity:.65;text-align:center;margin-top:-4px;';
+  modeHint.textContent = SETTINGS.mode==='answer'
+    ? 'Event happens → question is read aloud → student picks the correct answer.'
+    : SETTINGS.mode==='ask'
+    ? 'Event happens → student picks the correct WH-word to ask.'
+    : 'Event happens → student picks the WH-word, then picks the correct answer.';
+  grid.appendChild(modeHint);
+
+  const supportRow=document.createElement('div'); supportRow.className='settingsRow';
+  supportRow.innerHTML='<label>Support Level</label>';
+  const opts=document.createElement('div'); opts.className='opts';
+  [['guided','Guided (errorless)'],['practice','Practice'],['independent','Independent']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.support===val?' on':''); b.textContent=label;
+    b.onclick=()=>{ SETTINGS.support=val; renderSettings(); };
+    opts.appendChild(b);
+  });
+  supportRow.appendChild(opts); grid.appendChild(supportRow);
+
+  const buildRow=document.createElement('div'); buildRow.className='settingsRow';
+  buildRow.innerHTML='<label>Build Full Question</label>';
+  const buildOpts=document.createElement('div'); buildOpts.className='opts';
+  [[true,'On'],[false,'Off']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.buildQuestion===val?' on':''); b.textContent=label;
+    b.onclick=()=>{ SETTINGS.buildQuestion=val; renderSettings(); };
+    buildOpts.appendChild(b);
+  });
+  buildRow.appendChild(buildOpts); grid.appendChild(buildRow);
+  if(SETTINGS.mode==='answer'){
+    const buildHint=document.createElement('div'); buildHint.style.cssText='font-size:12px;opacity:.6;text-align:center;margin-top:-6px;';
+    buildHint.textContent='(Only used in "Ask the Question" or "Ask then Answer" modes)';
+    grid.appendChild(buildHint);
+  }
+
+  const roundsRow=document.createElement('div'); roundsRow.className='settingsRow';
+  roundsRow.innerHTML='<label>Rounds per Session</label>';
+  const roundsOpts=document.createElement('div'); roundsOpts.className='opts';
+  [5,8,12,20].forEach(n=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.rounds===n?' on':''); b.textContent=n;
+    b.onclick=()=>{ SETTINGS.rounds=n; renderSettings(); };
+    roundsOpts.appendChild(b);
+  });
+  roundsRow.appendChild(roundsOpts); grid.appendChild(roundsRow);
+
+  const soundRow=document.createElement('div'); soundRow.className='settingsRow';
+  soundRow.innerHTML='<label>Sound Effects</label>';
+  const soundOpts=document.createElement('div'); soundOpts.className='opts';
+  [[true,'On'],[false,'Off']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.sound===val?' on':''); b.textContent=label;
+    b.onclick=()=>{ SETTINGS.sound=val; renderSettings(); };
+    soundOpts.appendChild(b);
+  });
+  soundRow.appendChild(soundOpts); grid.appendChild(soundRow);
+
+  const speechRow=document.createElement('div'); speechRow.className='settingsRow';
+  speechRow.innerHTML='<label>Speech Narration</label>';
+  const speechOpts=document.createElement('div'); speechOpts.className='opts';
+  [[true,'On'],[false,'Off']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.speech===val?' on':''); b.textContent=label;
+    b.onclick=()=>{ SETTINGS.speech=val; renderSettings(); };
+    speechOpts.appendChild(b);
+  });
+  speechRow.appendChild(speechOpts); grid.appendChild(speechRow);
+
+  const nameRow=document.createElement('div'); nameRow.className='settingsRow';
+  nameRow.innerHTML='<label>Student Name (optional)</label>';
+  const nameInput=document.createElement('input');
+  nameInput.type='text'; nameInput.value=SETTINGS.studentName; nameInput.placeholder='e.g. Siqi';
+  nameInput.style.cssText='border:2px solid #eee;border-radius:12px;padding:8px 10px;font-size:15px;width:160px;';
+  nameInput.oninput=(e)=>{ SETTINGS.studentName=e.target.value; };
+  nameRow.appendChild(nameInput); grid.appendChild(nameRow);
+
+  const mediaHeading=document.createElement('h2');
+  mediaHeading.style.cssText='margin:18px 0 4px;'; mediaHeading.textContent='🎥 Custom Videos';
+  grid.appendChild(mediaHeading);
+  const mediaSub=document.createElement('p'); mediaSub.className='sub';
+  mediaSub.style.marginBottom='6px';
+  mediaSub.textContent='Each scenario can show a video from a web address (URL). Paste your own link below to replace the default video for a scenario (saved only on this device). You can use a YouTube link, a Google Drive link (sharing must be "Anyone with the link") or a direct link to an .mp4 file. If a video can\'t be loaded, the default picture is shown instead.';
+  grid.appendChild(mediaSub);
+
+  const manager=document.createElement('div'); manager.className='mediaManager'; manager.id='mediaManager';
+  grid.appendChild(manager);
+  renderMediaManager();
+}
+function renderMediaManager(){
+  const manager=document.getElementById('mediaManager');
+  if(!manager) return;
+  manager.innerHTML='';
+  SCENARIOS.forEach(sc=>{
+    const content=getContent(sc);
+    const hasTextOverride=!!OVERRIDES[sc.id];
+    const card=document.createElement('div'); card.className='mediaRow mediaCard';
+
+    const topLine=document.createElement('div'); topLine.className='mediaTopLine';
+    const thumb=document.createElement('div'); thumb.className='mediaThumb';
+    const custom=customMediaCache[sc.id];        // this teacher's own video URL, on this device
+    const customOk=!!custom && !custom.broken;
+    const bundled=bundledMediaCache[sc.id];       // default video from DEFAULT_VIDEO_URLS
+    const active=customOk?custom:bundled;
+    const display=getScenarioMedia(sc.id);        // whichever one actually wins
+    if(display && display.thumb){ thumb.innerHTML=`<img src="${display.thumb}">`; }
+    else { thumb.innerHTML=iconMarkup(sc.afterIcon); }
+    const statusWrap=document.createElement('div');
+    const status=document.createElement('div'); status.className='status';
+    status.textContent = customOk ? 'Your video URL (this device only)'
+      : bundled ? 'Default video'
+      : 'Using default picture';
+    statusWrap.appendChild(status);
+    const warnText = (custom && custom.broken) ? 'Your video URL could not be loaded ('+(custom.error||'unknown error')+'), so the default is being used. Check the link and its sharing settings.'
+      : (active && !active.thumb) ? (active.error||'Could not create a picture for this video.')+' You can still play it; the default drawing is shown instead.'
+      : '';
+    if(warnText){
+      const warn=document.createElement('div'); warn.className='mediaWarning';
+      warn.textContent='⚠️ '+warnText;
+      statusWrap.appendChild(warn);
+    }
+    topLine.appendChild(thumb); topLine.appendChild(statusWrap);
+    if(display){
+      const previewBtn=document.createElement('button');
+      previewBtn.className='miniBtn previewBtn'; previewBtn.textContent='▶ Preview';
+      previewBtn.onclick=()=>togglePreview(sc.id,previewBtn,card);
+      topLine.appendChild(previewBtn);
+    }
+
+    const previewSlot=document.createElement('div'); previewSlot.className='previewSlot'; previewSlot.id='preview-'+sc.id;
+
+    const fieldWrap=document.createElement('div'); fieldWrap.className='mediaFields';
+    const pField=makeMediaField('Intro', content.prompt, 'Optional — the line shown before the question, e.g. "Something happened!"', (val)=>{
+      OVERRIDES[sc.id]=OVERRIDES[sc.id]||{}; OVERRIDES[sc.id].prompt=val; saveOverrides();
+    });
+    const nameField=makeMediaField('Name', content.label, sc.answer, (val)=>{
+      OVERRIDES[sc.id]=OVERRIDES[sc.id]||{}; OVERRIDES[sc.id].label=val; saveOverrides();
+    });
+    const qField=makeMediaField('Question', content.question, sc.question, (val)=>{
+      OVERRIDES[sc.id]=OVERRIDES[sc.id]||{}; OVERRIDES[sc.id].question=val; saveOverrides();
+    });
+    const aField=makeMediaField('Answer', content.answer, sc.answer, (val)=>{
+      OVERRIDES[sc.id]=OVERRIDES[sc.id]||{}; OVERRIDES[sc.id].answer=val; saveOverrides();
+    });
+    const rField=makeMediaField('Feedback', content.reveal, 'Optional — a longer sentence spoken after a correct answer', (val)=>{
+      OVERRIDES[sc.id]=OVERRIDES[sc.id]||{}; OVERRIDES[sc.id].reveal=val; saveOverrides();
+    });
+    fieldWrap.appendChild(pField); fieldWrap.appendChild(nameField); fieldWrap.appendChild(qField); fieldWrap.appendChild(aField); fieldWrap.appendChild(rField);
+
+    const actions=document.createElement('div'); actions.className='mediaActions';
+    const urlField=document.createElement('label'); urlField.className='mediaField';
+    const urlLab=document.createElement('span'); urlLab.className='mediaFieldLabel'; urlLab.textContent='Video URL';
+    const urlInput=document.createElement('input'); urlInput.type='url'; urlInput.className='mediaFieldInput';
+    urlInput.placeholder='Paste a YouTube, Google Drive or .mp4 link (leave empty to use the default)';
+    urlInput.value=custom?custom.url:'';
+    urlField.appendChild(urlLab); urlField.appendChild(urlInput);
+    const saveUrlBtn=document.createElement('button'); saveUrlBtn.className='miniBtn';
+    saveUrlBtn.textContent=custom?'Update URL':'Save URL';
+    saveUrlBtn.onclick=async ()=>{
+      const val=urlInput.value.trim();
+      if(!val){ saveCustomUrl(sc.id,null); await probeScenarioMedia(sc); renderMediaManager(); return; }
+      if(!parseVideoUrl(val)){ alert('Please enter a full web address starting with http:// or https://'); return; }
+      saveUrlBtn.textContent='Checking…'; saveUrlBtn.disabled=true;
+      saveCustomUrl(sc.id,val);
+      await probeScenarioMedia(sc);
+      const c=customMediaCache[sc.id];
+      if(c && c.broken){
+        alert('That video could not be loaded: '+(c.error||'unknown error')+'\n\nUse a YouTube link, a Google Drive link shared with "Anyone with the link", or a direct .mp4 link.');
+        saveCustomUrl(sc.id,null); await probeScenarioMedia(sc);
+      }
+      renderMediaManager();
+    };
+    actions.appendChild(urlField);
+    actions.appendChild(saveUrlBtn);
+    if(custom){
+      const resetVidBtn=document.createElement('button'); resetVidBtn.className='miniBtn';
+      resetVidBtn.textContent='Remove — use default';
+      resetVidBtn.onclick=async ()=>{ saveCustomUrl(sc.id,null); await probeScenarioMedia(sc); renderMediaManager(); };
+      actions.appendChild(resetVidBtn);
+    }
+    if(!customOk && bundled && bundled.variants.length>1){
+      const switchBtn=document.createElement('button'); switchBtn.className='miniBtn';
+      switchBtn.textContent=`Video ${bundled.idx+1} of ${bundled.variants.length} ➜`;
+      switchBtn.onclick=()=>{
+        setBundledCurrent(sc.id,(bundled.idx+1)%bundled.variants.length);
+        renderMediaManager();
+      };
+      actions.appendChild(switchBtn);
+    }
+    if(active && loadThumbOverrides()[active.url]){
+      const resetPicBtn=document.createElement('button'); resetPicBtn.className='miniBtn'; resetPicBtn.textContent='Reset Picture';
+      resetPicBtn.onclick=()=>{
+        saveThumbOverride(active.url,null);
+        if(customOk) custom.thumb=custom.defaultThumb; else bundledSetThumb(sc.id,bundled.defaultThumb);
+        renderMediaManager();
+      };
+      actions.appendChild(resetPicBtn);
+    }
+    if(hasTextOverride){
+      const resetTextBtn=document.createElement('button'); resetTextBtn.className='miniBtn'; resetTextBtn.textContent='Reset Text';
+      resetTextBtn.onclick=()=>{ delete OVERRIDES[sc.id]; saveOverrides(); renderMediaManager(); };
+      actions.appendChild(resetTextBtn);
+    }
+
+    card.appendChild(topLine); card.appendChild(previewSlot); card.appendChild(fieldWrap); card.appendChild(actions);
+    manager.appendChild(card);
+  });
+}
+function describeVideoError(vid){
+  const codeMap={1:'Loading was aborted.',2:'A network error occurred while loading.',
+    3:'The browser could not decode this video (unsupported codec inside the file).',
+    4:'This video format/codec is not supported by this browser.'};
+  const err=vid && vid.error;
+  const codeMsg=err && codeMap[err.code] ? codeMap[err.code] : 'Unknown playback error.';
+  return codeMsg + (err?` (code ${err.code})`:'');
+}
+function togglePreview(scenarioId,btn,card){
+  const slot=card.querySelector('#preview-'+scenarioId);
+  if(slot.dataset.open==='1'){
+    slot.innerHTML=''; slot.dataset.open='0'; btn.textContent='▶ Preview';
+    return;
+  }
+  const customEntry=customMediaCache[scenarioId];
+  const isCustom=!!customEntry && !customEntry.broken;
+  const entry=isCustom?customEntry:bundledMediaCache[scenarioId];
+  const display=getScenarioMedia(scenarioId);
+  if(!display){ return; }
+  if(display.kind!=='file'){
+    slot.innerHTML=`<div style="height:220px;"><iframe src="${display.embedUrl}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen style="width:100%;height:100%;border:0;border-radius:14px;background:#111;"></iframe></div>
+      <div style="font-size:12px;opacity:.7;margin-top:4px;text-align:center;">The picture for ${display.kind==='youtube'?'YouTube':'Google Drive'} videos comes from the video's own thumbnail.</div>`;
+    slot.dataset.open='1'; btn.textContent='✕ Close Preview';
+    return;
+  }
+  const frameBtnHtml = `<div style="margin-top:6px;text-align:center;">
+      <div style="font-size:12px;opacity:.7;margin-bottom:4px;">Pause on the moment you want as the picture, then tap the button.</div>
+      <button class="miniBtn" id="setframe-${scenarioId}">📸 Use This Frame as Picture</button></div>`;
+  slot.innerHTML=`<video src="${display.url}" ${entry&&entry.cors?'crossorigin="anonymous"':''} controls playsinline style="width:100%;max-height:240px;border-radius:14px;background:#111;"></video>
+    ${frameBtnHtml}
+    <div class="mediaWarning" id="preview-err-${scenarioId}" style="display:none;"></div>`;
+  const vid=slot.querySelector('video');
+  const errBox=slot.querySelector('#preview-err-'+scenarioId);
+  const setFrameBtn=slot.querySelector('#setframe-'+scenarioId);
+  vid.onerror=()=>{
+    errBox.style.display='block';
+    errBox.textContent='⚠️ '+describeVideoError(vid)+' Check that the link goes straight to an .mp4 file that this browser can play.';
+  };
+  if(setFrameBtn){
+    setFrameBtn.onclick=async ()=>{
+      setFrameBtn.textContent='Saving…';
+      vid.pause();
+      try{
+        const canvas=document.createElement('canvas'); canvas.width=200; canvas.height=200;
+        const cx=canvas.getContext('2d');
+        const scale=Math.max(200/vid.videoWidth,200/vid.videoHeight);
+        const w=vid.videoWidth*scale,h=vid.videoHeight*scale;
+        cx.drawImage(vid,(200-w)/2,(200-h)/2,w,h);
+        const newThumb=canvas.toDataURL('image/jpeg',0.8);
+        saveThumbOverride(entry.url,newThumb);
+        if(isCustom){ customEntry.thumb=newThumb; } else { bundledSetThumb(scenarioId,newThumb); }
+        setFrameBtn.textContent='✓ Picture Updated';
+        setTimeout(()=>renderMediaManager(),700);
+      }catch(e){ setFrameBtn.textContent='Could not capture — this video\'s website may not allow it'; }
+    };
+  }
+  slot.dataset.open='1'; btn.textContent='✕ Close Preview';
+}
+function makeMediaField(labelText,currentVal,placeholderVal,onSave){
+  const wrap=document.createElement('label'); wrap.className='mediaField';
+  const lab=document.createElement('span'); lab.className='mediaFieldLabel'; lab.textContent=labelText;
+  const input=document.createElement('input'); input.type='text';
+  input.value=currentVal; input.placeholder=placeholderVal;
+  input.className='mediaFieldInput';
+  input.onchange=(e)=>{ onSave(e.target.value); renderMediaManager(); };
+  wrap.appendChild(lab); wrap.appendChild(input);
+  return wrap;
+}
+document.getElementById('settingsSaveBtn').addEventListener('click',()=>{
+  saveSettings(); goBack();
+});
+
+/* ================= GAME STATE ================= */
+let roundQueue=[]; let currentIndex=0; let currentScenario=null;
+let wrongAttempts=0; let sessionCorrect=0; let sessionTotal=0;
+let awaitingBuild=false; let buildTokens=[]; let buildAnswer=[]; let buildSlots=[];
+let sceneSwapTimer=null;
+
+document.getElementById('startPlayBtn').addEventListener('click',()=>{ unlockAudioAndSpeech(); startSession(); });
+document.getElementById('nextRoundBtn').addEventListener('click',nextRound);
+document.getElementById('playAgainBtn').addEventListener('click',()=>{ startSession(); });
+
+function activeWHTypes(){
+  return ['what'];
+}
+function buildRoundQueue(){
+  const whTypes=activeWHTypes();
+  let pool=SCENARIOS.filter(s=>whTypes.includes(s.wh));
+  if(pool.length===0) pool=SCENARIOS.filter(s=>s.wh==='what');
+  let queue=[];
+  while(queue.length<SETTINGS.rounds){
+    const shuffled=[...pool].sort(()=>Math.random()-0.5);
+    queue=queue.concat(shuffled);
+  }
+  return queue.slice(0,SETTINGS.rounds);
+}
+function startSession(){
+  roundQueue=buildRoundQueue(); currentIndex=0; sessionCorrect=0; sessionTotal=0;
+  showScreen('screen-game'); loadRound();
+}
+function stopGame(){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+
+function enterFullscreen(vid){
+  try{
+    if(vid.webkitEnterFullscreen){ vid.webkitEnterFullscreen(); return; } // iOS Safari native video fullscreen
+    if(vid.requestFullscreen){ vid.requestFullscreen(); return; }
+    if(vid.webkitRequestFullscreen){ vid.webkitRequestFullscreen(); return; }
+    if(vid.msRequestFullscreen){ vid.msRequestFullscreen(); return; }
+  }catch(e){}
+}
+function renderStageMedia(scenario){
+  const stageEl=document.getElementById('gameEmoji');
+  clearTimeout(sceneSwapTimer);
+  const display=getScenarioMedia(scenario.id);
+  stageEl.className='sceneEmoji anim-fade';
+  if(display && display.type==='video' && display.kind!=='file'){
+    stageEl.innerHTML=`<div class="videoWrap"><iframe src="${display.embedUrl}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
+    return;
+  }
+  if(display && display.type==='video'){
+    stageEl.innerHTML=`<div class="videoWrap">
+        <video playsinline webkit-playsinline muted></video>
+        <button class="fsBtn" title="Full screen" aria-label="Play full screen">⛶</button>
+      </div>`;
+    const wrap=stageEl.querySelector('.videoWrap');
+    const vid=wrap.querySelector('video');
+    const fsBtn=wrap.querySelector('.fsBtn');
+    vid.src=display.url;
+    fsBtn.onclick=(e)=>{ e.stopPropagation(); enterFullscreen(vid); };
+    let failed=false;
+    const showFallback=()=>{
+      if(failed) return; failed=true;
+      const diag=describeVideoError(vid);
+      renderDefaultIcon(scenario);
+      const note=document.createElement('div'); note.className='videoErrorNote';
+      note.textContent="Video couldn't play: "+diag;
+      stageEl.appendChild(note);
+    };
+    vid.onerror=showFallback;
+    vid.onloadeddata=()=>{
+      const playPromise=vid.play();
+      if(playPromise && playPromise.catch){
+        playPromise.catch(()=>{
+          // Autoplay blocked — let the student/teacher tap to start it.
+          const tap=document.createElement('div'); tap.className='tapToPlay';
+          tap.innerHTML='<div class="playIcon">▶️</div>';
+          tap.onclick=()=>{ vid.play(); tap.remove(); };
+          wrap.appendChild(tap);
+        });
+      }
+    };
+    // If nothing loads within 4s, treat as failed rather than leaving a blank box.
+    setTimeout(()=>{ if(vid.readyState===0) showFallback(); },4000);
+    return;
+  }
+  renderDefaultIcon(scenario);
+}
+function renderDefaultIcon(scenario){
+  const stageEl=document.getElementById('gameEmoji');
+  clearTimeout(sceneSwapTimer);
+  stageEl.className='sceneEmoji anim-'+scenario.anim;
+  stageEl.innerHTML=iconMarkup(scenario.beforeIcon);
+  void stageEl.offsetWidth; // restart animation
+  sceneSwapTimer=setTimeout(()=>{
+    stageEl.innerHTML=iconMarkup(scenario.afterIcon);
+    stageEl.className='sceneEmoji anim-fade';
+  }, 1000);
+}
+function choiceIconHTML(scenario){
+  const display=getScenarioMedia(scenario.id);
+  if(display && display.thumb){ return `<div class="choiceIcon"><img src="${display.thumb}"></div>`; }
+  return `<div class="choiceIcon">${iconMarkup(scenario.answerIcon)}</div>`;
+}
+
+function loadRound(){
+  if(currentIndex>=roundQueue.length){ endSession(); return; }
+  const base=roundQueue[currentIndex];
+  rotateBundledVideo(base.id);
+  currentScenario=Object.assign({},base,getContent(base));
+  wrongAttempts=0; awaitingBuild=false;
+  document.getElementById('progressFill').style.width=Math.round((currentIndex/roundQueue.length)*100)+'%';
+  document.getElementById('revealPanel').style.display='none';
+  document.getElementById('tokenTray').style.display='none';
+  document.getElementById('sentenceStrip').style.display='none';
+  document.getElementById('choiceGrid').innerHTML='';
+
+  renderStageMedia(currentScenario);
+
+  if(SETTINGS.mode==='answer'){
+    startAnswerStep();
+  } else {
+    startAskStep();
+  }
+}
+
+/* ---- STEP 1: choose the WH-word ('ask' and 'both' modes) ---- */
+function startAskStep(){
+  document.getElementById('speechBubble').textContent=currentScenario.prompt;
+  setTimeout(()=>{ speak(currentScenario.prompt); },250);
+  renderWHChoices();
+}
+function renderWHChoices(){
+  const grid=document.getElementById('choiceGrid');
+  grid.innerHTML='';
+  const correct=currentScenario.wh;
+  const allWH=['what','who','where','why','when'];
+  let distractorCount = SETTINGS.support==='guided'?1 : SETTINGS.support==='practice'?2 : 4;
+  let distractors=allWH.filter(w=>w!==correct).sort(()=>Math.random()-0.5).slice(0,distractorCount);
+  let choices=[correct,...distractors].sort(()=>Math.random()-0.5);
+
+  choices.forEach(w=>{
+    const btn=document.createElement('button');
+    btn.className='whChoice '+WH_COLORS[w];
+    btn.innerHTML=`<span style="font-size:1.3em;">${WH_ICONS[w]}</span><span>${WH_LABELS[w]}</span>`;
+    if(SETTINGS.support==='guided' && w===correct){ btn.classList.add('correctGlow'); }
+    btn.onclick=()=>handleWHChoice(w);
+    grid.appendChild(btn);
+  });
+}
+function handleWHChoice(chosen){
+  sessionTotal++;
+  if(chosen===currentScenario.wh){
+    playSound('success');
+    sessionCorrect++;
+    document.getElementById('choiceGrid').innerHTML='';
+    if(SETTINGS.mode==='both'){ startAnswerStep(); }
+    else if(SETTINGS.buildQuestion){ startBuildQuestion(); }
+    else { showReveal(); }
+  } else {
+    wrongAttempts++;
+    playSound('gentle');
+    if(SETTINGS.support!=='guided' && wrongAttempts>=2){ hintWHChoice(); }
+  }
+}
+function hintWHChoice(){
+  document.querySelectorAll('.whChoice').forEach(b=>{
+    if(b.textContent.includes(WH_LABELS[currentScenario.wh])) b.classList.add('correctGlow');
+  });
+}
+
+/* ---- STEP 2: the question is read aloud, student picks the correct answer ('answer' and 'both' modes) ---- */
+function startAnswerStep(){
+  const q=currentScenario.question;
+  document.getElementById('speechBubble').innerHTML = SETTINGS.mode==='both'
+    ? `Now answer: <br><b>${q}</b>` : `<b>${q}</b>`;
+  setTimeout(()=>{
+    speak(q);
+  },250);
+  renderAnswerChoices();
+}
+function renderAnswerChoices(){
+  const grid=document.getElementById('choiceGrid');
+  grid.innerHTML='';
+  const sameType=SCENARIOS.filter(s=>s.wh===currentScenario.wh && s.id!==currentScenario.id);
+  let distractorCount = SETTINGS.support==='guided'?1 : SETTINGS.support==='practice'?2 : 4;
+  distractorCount=Math.min(distractorCount, sameType.length);
+  const distractors=sameType.sort(()=>Math.random()-0.5).slice(0,distractorCount);
+  const choices=[{answer:currentScenario.answer,iconHtml:choiceIconHTML(currentScenario),correct:true},
+    ...distractors.map(s=>({answer:getContent(s).answer,iconHtml:choiceIconHTML(s),correct:false}))]
+    .sort(()=>Math.random()-0.5);
+
+  choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='whChoice '+WH_COLORS[currentScenario.wh];
+    if(c.answer.length>28) btn.classList.add('longText');
+    btn.innerHTML=c.iconHtml+`<div>${c.answer}</div>`;
+    if(SETTINGS.support==='guided' && c.correct){ btn.classList.add('correctGlow'); }
+    btn.onclick=()=>handleAnswerChoice(c.correct);
+    grid.appendChild(btn);
+  });
+}
+function handleAnswerChoice(isCorrect){
+  sessionTotal++;
+  if(isCorrect){
+    playSound('success');
+    sessionCorrect++;
+    document.getElementById('choiceGrid').innerHTML='';
+    if(SETTINGS.mode==='both' && SETTINGS.buildQuestion){ startBuildQuestion(); }
+    else { showReveal(); }
+  } else {
+    wrongAttempts++;
+    playSound('gentle');
+    if(SETTINGS.support!=='guided' && wrongAttempts>=2){ hintAnswerChoice(); }
+  }
+}
+function hintAnswerChoice(){
+  document.querySelectorAll('.whChoice').forEach(b=>{
+    if(b.innerHTML.includes(currentScenario.answer)) b.classList.add('correctGlow');
+  });
+}
+
+function startBuildQuestion(){
+  awaitingBuild=true;
+  buildAnswer=currentScenario.tokens.slice();
+  buildTokens=[...buildAnswer].sort(()=>Math.random()-0.5);
+  buildSlots=[];
+  const tray=document.getElementById('tokenTray');
+  const strip=document.getElementById('sentenceStrip');
+  tray.style.display='flex'; strip.style.display='flex';
+  tray.innerHTML=''; strip.innerHTML='';
+  document.getElementById('speechBubble').textContent='Build the question in order!';
+  buildTokens.forEach((tok,i)=>{
+    const t=document.createElement('div'); t.className='token'; t.textContent=tok; t.dataset.idx=i;
+    t.onclick=()=>{
+      if(t.classList.contains('used')) return;
+      buildSlots.push(tok); t.classList.add('used');
+      renderStrip();
+      if(buildSlots.length===buildAnswer.length){ checkBuild(); }
+    };
+    tray.appendChild(t);
+  });
+  renderStrip();
+}
+function renderStrip(){
+  const strip=document.getElementById('sentenceStrip');
+  strip.innerHTML = buildSlots.length ? buildSlots.join(' ') : '&nbsp;';
+}
+function checkBuild(){
+  const correct = buildSlots.join(' ').toLowerCase() === buildAnswer.join(' ').toLowerCase();
+  if(correct){ playSound('tada'); showReveal(); }
+  else {
+    playSound('gentle');
+    setTimeout(()=>{ startBuildQuestion(); },900);
+  }
+}
+
+function showReveal(){
+  document.getElementById('tokenTray').style.display='none';
+  document.getElementById('sentenceStrip').style.display='none';
+  document.getElementById('speechBubble').textContent=currentScenario.question;
+  const speechParts=["That's right! "+currentScenario.answer+'.'];
+  if(currentScenario.reveal) speechParts.push(currentScenario.reveal);
+  speak(speechParts.join(' '));
+  const panel=document.getElementById('revealPanel');
+  const revealEl=document.getElementById('revealEmoji');
+  const display=getScenarioMedia(currentScenario.id);
+  if(display && display.type==='image'){ revealEl.innerHTML=`<img src="${display.url}" style="max-width:160px;max-height:160px;border-radius:16px;object-fit:contain;">`; }
+  else if(display && display.type==='video' && display.thumb){ revealEl.innerHTML=`<img src="${display.thumb}" style="max-width:160px;max-height:160px;border-radius:16px;object-fit:contain;">`; }
+  else { revealEl.innerHTML=`<div style="width:80px;height:80px;margin:0 auto;">${iconMarkup(currentScenario.revealIcon)}</div>`; }
+  document.getElementById('revealAnswer').textContent=currentScenario.answer;
+  const revealTextEl=document.getElementById('revealText');
+  revealTextEl.textContent=currentScenario.reveal;
+  revealTextEl.style.display=currentScenario.reveal ? '' : 'none';
+  panel.style.display='block';
+  burstConfetti();
+}
+function nextRound(){ currentIndex++; loadRound(); }
+
+function endSession(){
+  document.getElementById('progressFill').style.width='100%';
+  const pct = sessionTotal? Math.round((sessionCorrect/sessionTotal)*100):100;
+  const stars = pct>=90?'⭐⭐⭐':pct>=60?'⭐⭐':'⭐';
+  document.getElementById('starRow').textContent=stars;
+  const name=SETTINGS.studentName? SETTINGS.studentName+', ':'';
+  document.getElementById('summaryText').textContent=`${name}you played ${roundQueue.length} rounds today. Keep asking great questions!`;
+  showScreen('screen-summary');
+  burstConfetti();
+  playSound('fanfare');
+}
+
+/* ================= SCENE ANIMATIONS (dynamic keyframes) ================= */
+const styleEl=document.createElement('style');
+styleEl.textContent=`
+.anim-fall{animation:sceneFall 0.9s ease-in;}
+@keyframes sceneFall{0%{transform:translateY(-80px) rotate(0deg); opacity:0;}60%{opacity:1;}100%{transform:translateY(0) rotate(15deg);}}
+.anim-walk-in{animation:sceneWalkIn 0.9s ease-out;}
+@keyframes sceneWalkIn{0%{transform:translateX(-140px); opacity:0;}100%{transform:translateX(0); opacity:1;}}
+.anim-walk-out{animation:sceneWalkOut 0.9s ease-in;}
+@keyframes sceneWalkOut{0%{transform:translateX(0); opacity:1;}100%{transform:translateX(140px); opacity:0.15;}}
+.anim-shake{animation:sceneShake 0.6s ease-in-out 2;}
+@keyframes sceneShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-10px) rotate(-4deg);}75%{transform:translateX(10px) rotate(4deg);}}
+.anim-bounce{animation:sceneBounce 1s ease-in-out;}
+@keyframes sceneBounce{0%{transform:translateY(-40px); opacity:0;}50%{transform:translateY(0); opacity:1;}70%{transform:translateY(-14px);}100%{transform:translateY(0);}}
+.anim-fade{animation:sceneFade 0.9s ease-in;}
+@keyframes sceneFade{0%{opacity:0; transform:scale(0.6);}100%{opacity:1; transform:scale(1);}}
+.anim-pulse{animation:scenePulse 1s ease-in-out infinite;}
+@keyframes scenePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+.anim-flash{animation:sceneFlash 0.5s steps(1) infinite;}
+@keyframes sceneFlash{0%,100%{filter:drop-shadow(0 0 0 #ff9e9e);}50%{filter:drop-shadow(0 0 25px #ff5c5c);}}
+.anim-rain{animation:sceneRain 1.4s ease-in-out;}
+@keyframes sceneRain{0%{transform:translateY(-30px); opacity:0.3;}100%{transform:translateY(0); opacity:1;}}
+`;
+document.head.appendChild(styleEl);
+</script>
+</body>
+</html>
