@@ -73,11 +73,11 @@
     font-size:var(--fs-lg); text-align:center; max-width:560px; margin:6px 0 14px; font-weight:700;}
   .choiceGrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
     gap:14px; width:100%; max-width:640px; margin-top:6px;}
-  .whChoice{font-size:var(--fs-lg); font-weight:800; border:none; border-radius:22px;
+  .whChoice{font-size:clamp(16px,2.4vw,20px); font-weight:800; border:none; border-radius:22px;
     padding:18px 16px; box-shadow:var(--shadow); cursor:pointer; transition:transform .08s ease;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
     min-height:110px; text-align:center; line-height:1.28;}
-  .whChoice.longText{font-size:var(--fs-md); line-height:1.3;}
+  .whChoice{line-height:1.3;}
   .whChoice:active{transform:translateY(5px); box-shadow:0 1px 0 rgba(0,0,0,0.08);}
   .whChoice.correctGlow{animation:glow 1.1s infinite;}
   @keyframes glow{0%,100%{box-shadow:var(--shadow), 0 0 0 0 rgba(255,214,102,0);}
@@ -169,7 +169,7 @@
   details.menu .settingsRow:first-child, #settingsPopover .settingsRow:first-child{border-top:none; padding-top:6px;}
   details.menu .settingsRow label, #settingsPopover .settingsRow label{font-size:var(--fs-xs); font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#8a7fb0;}
   details.menu .settingsRow .opts, #settingsPopover .settingsRow .opts{display:flex; flex-wrap:nowrap; gap:0; background:#f4f2fa; border-radius:12px; padding:3px;}
-  details.menu .settingsRow .opts .miniBtn, #settingsPopover .settingsRow .opts .miniBtn{flex:1; height:52px; display:flex; align-items:center; justify-content:center; text-align:center; background:transparent; border-radius:9px; padding:4px 6px;
+  details.menu .settingsRow .opts .miniBtn, #settingsPopover .settingsRow .opts .miniBtn{flex:1; min-width:0; height:38px; display:flex; align-items:center; justify-content:center; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:transparent; border-radius:9px; padding:0 4px;
     font-size:var(--fs-sm); line-height:1.2; color:#5b5570;}
   details.menu .settingsRow .opts .miniBtn.on, #settingsPopover .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15);}
   .rowHint{font-size:var(--fs-xs); line-height:1.4; color:#7d7894;}
@@ -190,13 +190,17 @@
   /* Settings popover, opens just below the gear button */
   #settingsBackdrop{position:absolute; inset:0; z-index:48; background:rgba(40,30,70,.18);}
   #settingsPopover{position:absolute; top:58px; right:10px; z-index:49; width:min(340px,calc(100% - 20px));
-    max-height:calc(100% - 70px); overflow-y:auto; background:#fff; border-radius:18px; padding:14px 16px 8px;
+    max-height:calc(100% - 70px); overflow-y:auto; overflow-x:hidden; background:#fff; border-radius:18px; padding:14px 16px 8px;
     box-shadow:0 8px 30px rgba(40,30,70,.28);}
   #settingsPopover[hidden], #settingsBackdrop[hidden]{display:none;}
   .popTitle{font-size:var(--fs-md); font-weight:800; color:#6b5b95; padding-bottom:6px;}
   #settingsPopover .settingsGrid{max-width:none; gap:0;}
   .voiceOpts{display:flex; gap:8px; align-items:center;}
-  #settingsPopover .settingsRow .opts .miniBtn{height:44px;}
+  #settingsPopover .settingsGrid, #settingsPopover .settingsRow, #settingsPopover .opts, #settingsPopover .voiceOpts{min-width:0; max-width:100%;}
+  #settingsPopover .voiceOpts{width:100%;}
+  #settingsPopover select{flex:1; min-width:0; width:100%; max-width:100%; text-overflow:ellipsis;}
+  #settingsPopover .rowHint{overflow-wrap:anywhere;}
+  #screen-summary{justify-content:center; justify-content:safe center; text-align:center; gap:6px;}
 </style>
 </head>
 <body>
@@ -764,7 +768,7 @@ function renderGameplay(grid){
   const modeRow=document.createElement('div'); modeRow.className='settingsRow';
   modeRow.innerHTML='<label>Practice Mode</label>';
   const modeOpts=document.createElement('div'); modeOpts.className='opts';
-  [['answer','Answer the Question'],['ask','Ask the Question'],['both','Ask then Answer']].forEach(([val,label])=>{
+  [['answer','Answer'],['ask','Ask'],['both','Ask + Answer']].forEach(([val,label])=>{
     const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.mode===val?' on':''); b.textContent=label;
     b.onclick=()=>{ SETTINGS.mode=val; saveSettings(); renderGameplay(grid); };
     modeOpts.appendChild(b);
@@ -781,7 +785,7 @@ function renderGameplay(grid){
   const supportRow=document.createElement('div'); supportRow.className='settingsRow';
   supportRow.innerHTML='<label>Support Level</label>';
   const opts=document.createElement('div'); opts.className='opts';
-  [['guided','Guided (errorless)'],['practice','Practice'],['independent','Independent']].forEach(([val,label])=>{
+  [['guided','Guided'],['practice','Practice'],['independent','Independent']].forEach(([val,label])=>{
     const b=document.createElement('button'); b.className='miniBtn'+(SETTINGS.support===val?' on':''); b.textContent=label;
     b.onclick=()=>{ SETTINGS.support=val; saveSettings(); renderGameplay(grid); };
     opts.appendChild(b);
@@ -1309,7 +1313,6 @@ function renderAnswerChoices(){
   choices.forEach(c=>{
     const btn=document.createElement('button');
     btn.className='whChoice '+WH_COLORS[currentScenario.wh];
-    if(c.answer.length>28) btn.classList.add('longText');
     btn.innerHTML=c.iconHtml+`<div>${c.answer}</div>`;
     if(SETTINGS.support==='guided' && c.correct){ btn.classList.add('correctGlow'); }
     btn.onclick=()=>handleAnswerChoice(c.correct);
