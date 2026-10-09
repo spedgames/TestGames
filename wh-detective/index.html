@@ -510,7 +510,7 @@ async function probeScenarioMedia(sc){
       const okImg=await loadImageOk(info.thumbUrl);
       const name=info.kind==='youtube'?'YouTube':'Google Drive';
       if(!okImg) return {failed:true,error:'Could not find this '+name+' video. '+(info.kind==='drive'?'Make sure sharing is set to "Anyone with the link can view".':'Check the link, and that the video is public or unlisted.')};
-      return {url,kind:info.kind,embedUrl:info.embedUrl,thumb:info.thumbUrl,defaultThumb:info.thumbUrl,cors:false,error:null};
+      return {url,kind:info.kind,embedUrl:info.embedUrl,thumb:overrides[url]||info.thumbUrl,defaultThumb:info.thumbUrl,cors:false,error:null};
     }
     const r=await captureThumbFromVideoSrc(url,fileKeyFromUrl(url),sc.id);
     return r.ok?{url,kind:'file',thumb:overrides[url]||r.thumb,defaultThumb:r.thumb,cors:r.cors,error:r.error}:{failed:true,error:r.error};
@@ -893,6 +893,45 @@ function describeVideoError(vid){
   const codeMsg=err && codeMap[err.code] ? codeMap[err.code] : 'Unknown playback error.';
   return codeMsg + (err?` (code ${err.code})`:'');
 }
+/* Lets the teacher upload their own picture (e.g. a screenshot) for a video.
+   The image is cropped to a square, shrunk, and saved on this device against the video's URL. */
+function pictureUploadHtml(scenarioId){
+  return `<div style="margin-top:8px;text-align:center;">
+      <button class="miniBtn" id="uploadpic-${scenarioId}">🖼️ Upload Picture (screenshot)</button>
+      <input type="file" accept="image/*" id="uploadpic-file-${scenarioId}" style="display:none;">
+    </div>`;
+}
+function attachPictureUpload(slot,scenarioId,entry,isCustom){
+  const btn=slot.querySelector('#uploadpic-'+scenarioId);
+  const input=slot.querySelector('#uploadpic-file-'+scenarioId);
+  if(!btn||!input) return;
+  const label=btn.textContent;
+  btn.onclick=()=>input.click();
+  input.onchange=()=>{
+    const file=input.files&&input.files[0]; if(!file) return;
+    btn.textContent='Saving…';
+    const objUrl=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas'); canvas.width=200; canvas.height=200;
+        const cx=canvas.getContext('2d');
+        cx.fillStyle='#fff'; cx.fillRect(0,0,200,200);
+        const scale=Math.max(200/img.naturalWidth,200/img.naturalHeight);
+        const w=img.naturalWidth*scale,h=img.naturalHeight*scale;
+        cx.drawImage(img,(200-w)/2,(200-h)/2,w,h);
+        const newThumb=canvas.toDataURL('image/jpeg',0.85);
+        if(!saveThumbOverride(entry.url,newThumb)) throw new Error('storage full');
+        if(isCustom){ entry.thumb=newThumb; } else { bundledSetThumb(scenarioId,newThumb); }
+        btn.textContent='✓ Picture Updated';
+        setTimeout(()=>renderMediaManager(),700);
+      }catch(e){ btn.textContent='Could not save that picture'; setTimeout(()=>{ btn.textContent=label; },2500); }
+      URL.revokeObjectURL(objUrl); input.value='';
+    };
+    img.onerror=()=>{ btn.textContent='That file is not a picture we can read'; setTimeout(()=>{ btn.textContent=label; },2500); URL.revokeObjectURL(objUrl); input.value=''; };
+    img.src=objUrl;
+  };
+}
 function togglePreview(scenarioId,btn,card){
   const slot=card.querySelector('#preview-'+scenarioId);
   if(slot.dataset.open==='1'){
@@ -906,7 +945,9 @@ function togglePreview(scenarioId,btn,card){
   if(!display){ return; }
   if(display.kind!=='file'){
     slot.innerHTML=`<div style="height:220px;"><iframe src="${display.embedUrl}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen style="width:100%;height:100%;border:0;border-radius:14px;background:#111;"></iframe></div>
-      <div style="font-size:12px;opacity:.7;margin-top:4px;text-align:center;">The picture for ${display.kind==='youtube'?'YouTube':'Google Drive'} videos comes from the video's own thumbnail.</div>`;
+      <div style="font-size:12px;opacity:.7;margin-top:4px;text-align:center;">By default the picture comes from the video's own thumbnail. If it isn't a good one, take a screenshot of the moment you want and upload it here.</div>
+      ${pictureUploadHtml(scenarioId)}`;
+    attachPictureUpload(slot,scenarioId,entry,isCustom);
     slot.dataset.open='1'; btn.textContent='✕ Close Preview';
     return;
   }
@@ -915,7 +956,9 @@ function togglePreview(scenarioId,btn,card){
       <button class="miniBtn" id="setframe-${scenarioId}">📸 Use This Frame as Picture</button></div>`;
   slot.innerHTML=`<video src="${display.url}" ${entry&&entry.cors?'crossorigin="anonymous"':''} controls playsinline style="width:100%;max-height:240px;border-radius:14px;background:#111;"></video>
     ${frameBtnHtml}
+    ${pictureUploadHtml(scenarioId)}
     <div class="mediaWarning" id="preview-err-${scenarioId}" style="display:none;"></div>`;
+  attachPictureUpload(slot,scenarioId,entry,isCustom);
   const vid=slot.querySelector('video');
   const errBox=slot.querySelector('#preview-err-'+scenarioId);
   const setFrameBtn=slot.querySelector('#setframe-'+scenarioId);
