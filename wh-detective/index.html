@@ -8,6 +8,7 @@
   :root{
     --bg1:#fdf6ec; --bg2:#eaf6f6; --pink:#ffc9de; --peach:#ffd9b3; --mint:#c8f0e0;
     --sky:#c9e8fb; --lav:#e3d3f7; --sun:#fff2b8; --ink:#4a4a5a; --green:#8fd6a8;
+    --fs-xs:12px; --fs-sm:14px; --fs-md:16px; --fs-lg:clamp(18px,3vw,24px);
     --red:#ff9e9e; --grey:#d9d9e3; --shadow:0 6px 0 rgba(0,0,0,0.08);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
@@ -20,10 +21,10 @@
     align-items:center; justify-content:flex-start; padding:16px; overflow-y:auto;}
   .screen.active{display:flex;}
   h1{font-size:clamp(24px,5vw,42px); margin:8px 0 4px; text-align:center; color:#6b5b95;}
-  h2{font-size:clamp(18px,3.5vw,28px); margin:6px 0; text-align:center;}
-  p.sub{font-size:clamp(14px,2.5vw,20px); text-align:center; margin:0 0 12px; opacity:.8;}
+  h2{font-size:var(--fs-lg); margin:6px 0; text-align:center;}
+  p.sub{font-size:var(--fs-md); text-align:center; margin:0 0 12px; opacity:.8;}
   .bigBtn{
-    font-size:clamp(18px,3vw,26px); font-weight:700; border:none; border-radius:24px;
+    font-size:var(--fs-lg); font-weight:700; border:none; border-radius:24px;
     padding:18px 32px; margin:8px; cursor:pointer; box-shadow:var(--shadow);
     transition:transform .08s ease; min-width:140px; color:var(--ink);
   }
@@ -61,22 +62,22 @@
     display:flex; align-items:center; justify-content:center;}
   .fsBtn:active{transform:translateY(2px);}
   .videoErrorNote{position:absolute; bottom:6px; left:6px; right:6px; background:rgba(255,255,255,0.92);
-    border-radius:10px; padding:4px 8px; font-size:11px; text-align:center; color:#b91c1c; font-weight:700;}
-  .mediaWarning{font-size:11px; color:#b91c1c; font-weight:700; margin-top:2px;}
+    border-radius:10px; padding:4px 8px; font-size:var(--fs-xs); text-align:center; color:#b91c1c; font-weight:700;}
+  .mediaWarning{font-size:var(--fs-xs); color:#b91c1c; font-weight:700; margin-top:2px;}
   .previewBtn{margin-left:auto;}
   .previewSlot:empty{display:none;}
   .choiceIcon{display:inline-flex; align-items:center; justify-content:center; margin-bottom:6px;}
   .choiceIcon svg{width:clamp(40px,7vw,64px); height:clamp(40px,7vw,64px);}
   .choiceIcon img{width:clamp(44px,8vw,70px); height:clamp(44px,8vw,70px); object-fit:cover; border-radius:12px;}
   .speechBubble{background:#fff; border-radius:22px; padding:14px 22px; box-shadow:var(--shadow);
-    font-size:clamp(16px,3vw,22px); text-align:center; max-width:560px; margin:6px 0 14px; font-weight:700;}
+    font-size:var(--fs-lg); text-align:center; max-width:560px; margin:6px 0 14px; font-weight:700;}
   .choiceGrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
     gap:14px; width:100%; max-width:640px; margin-top:6px;}
-  .whChoice{font-size:clamp(18px,2.6vw,24px); font-weight:800; border:none; border-radius:22px;
+  .whChoice{font-size:var(--fs-lg); font-weight:800; border:none; border-radius:22px;
     padding:18px 16px; box-shadow:var(--shadow); cursor:pointer; transition:transform .08s ease;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
     min-height:110px; text-align:center; line-height:1.28;}
-  .whChoice.longText{font-size:clamp(14px,2vw,18px); line-height:1.3;}
+  .whChoice.longText{font-size:var(--fs-md); line-height:1.3;}
   .whChoice:active{transform:translateY(5px); box-shadow:0 1px 0 rgba(0,0,0,0.08);}
   .whChoice.correctGlow{animation:glow 1.1s infinite;}
   @keyframes glow{0%,100%{box-shadow:var(--shadow), 0 0 0 0 rgba(255,214,102,0);}
@@ -90,7 +91,7 @@
     transition:width .4s ease;}
   .menuStack{width:100%; max-width:560px; display:flex; flex-direction:column; gap:10px; margin:16px 0 8px;}
   details.menu{background:rgba(255,255,255,.9); border:2px solid #eee; border-radius:18px; box-shadow:var(--shadow);}
-  details.menu > summary{cursor:pointer; font-weight:800; font-size:16px; color:#6b5b95; padding:12px 16px;
+  details.menu > summary{cursor:pointer; font-weight:800; font-size:var(--fs-md); color:#6b5b95; padding:12px 16px;
     list-style:none; display:flex; align-items:center; justify-content:space-between; user-select:none;}
   details.menu > summary::-webkit-details-marker{display:none;}
   details.menu > summary::after{content:'▾'; font-size:18px; transition:transform .2s;}
@@ -99,25 +100,25 @@
   .settingsGrid{display:flex; flex-direction:column; gap:10px; width:100%; max-width:520px;}
   .settingsRow{display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:#fff; border-radius:18px; padding:10px 16px; box-shadow:var(--shadow); flex-wrap:wrap;}
-  .settingsRow label{font-weight:700; font-size:15px;}
+  .settingsRow label{font-weight:700; font-size:var(--fs-md);}
   .settingsRow .opts{display:flex; gap:6px; flex-wrap:wrap;}
   .miniBtn{border:none; border-radius:14px; padding:8px 14px; font-weight:700; cursor:pointer;
-    background:var(--grey); font-size:14px;}
+    background:var(--grey); font-size:var(--fs-sm);}
   .miniBtn.on{background:var(--green); color:#fff;}
   .levelChecks{display:flex; flex-wrap:wrap; gap:8px; justify-content:center;}
   .levelChk{display:flex; align-items:center; gap:6px; background:#fff; border-radius:16px;
-    padding:8px 12px; box-shadow:var(--shadow); font-weight:700; font-size:14px; cursor:pointer;}
+    padding:8px 12px; box-shadow:var(--shadow); font-weight:700; font-size:var(--fs-sm); cursor:pointer;}
   .levelChk input{width:18px;height:18px;}
   #confettiCanvas{position:absolute; inset:0; pointer-events:none; z-index:60;}
   .tokenTray{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:8px; max-width:560px;}
-  .token{background:#fff; border-radius:14px; padding:10px 14px; font-weight:700; font-size:16px;
+  .token{background:#fff; border-radius:14px; padding:10px 14px; font-weight:700; font-size:var(--fs-md);
     box-shadow:var(--shadow); cursor:pointer;}
   .token.used{opacity:.25; pointer-events:none;}
   .sentenceStrip{min-height:56px; width:100%; max-width:560px; background:#fff; border-radius:16px;
     box-shadow:var(--shadow); display:flex; align-items:center; flex-wrap:wrap; gap:6px;
-    padding:8px 12px; margin-top:10px; font-weight:700; font-size:18px;}
+    padding:8px 12px; margin-top:10px; font-weight:700; font-size:var(--fs-lg);}
   .starRow{font-size:34px; letter-spacing:6px;}
-  footer.tiny{font-size:11px; opacity:.5; margin-top:auto; padding-top:10px; text-align:center;}
+  footer.tiny{font-size:var(--fs-xs); opacity:.5; margin-top:auto; padding-top:10px; text-align:center;}
   .mediaManager{display:flex; flex-direction:column; gap:10px; width:100%; max-width:520px;}
   .mediaRow.mediaCard{display:flex; flex-direction:column; align-items:stretch; gap:8px;
     background:#fff; border-radius:18px; padding:12px 14px; box-shadow:var(--shadow);}
@@ -125,12 +126,12 @@
   .mediaThumb{width:54px; height:54px; border-radius:12px; background:#f5f5f5; display:flex;
     align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;}
   .mediaThumb svg{width:80%; height:80%;} .mediaThumb img{width:100%; height:100%; object-fit:cover;}
-  .mediaTopLine .status{font-size:12px; opacity:.65;}
+  .mediaTopLine .status{font-size:var(--fs-xs); opacity:.65;}
   .mediaFields{display:flex; flex-direction:column; gap:6px;}
   .mediaField{display:flex; align-items:center; gap:8px;}
-  .mediaFieldLabel{font-size:12px; font-weight:700; opacity:.7; width:60px; flex-shrink:0;}
+  .mediaFieldLabel{font-size:var(--fs-xs); font-weight:700; opacity:.7; width:60px; flex-shrink:0;}
   .mediaFieldInput{flex:1; border:2px solid #eee; border-radius:12px; padding:7px 10px;
-    font-size:14px; font-family:inherit;}
+    font-size:var(--fs-md); font-family:inherit;}
   .mediaActions{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
   .mediaActions .mediaField{flex:1 1 100%;}
 
@@ -163,33 +164,49 @@
   /* ===== Clean, flat styling inside the start-screen menus ===== */
   details.menu .menuBody{padding:0 18px 16px; align-items:stretch;}
   details.menu .settingsGrid{gap:0; max-width:none;}
-  details.menu .settingsRow{background:none; box-shadow:none; border-radius:0; border-top:1.5px solid #efecf7;
+  details.menu .settingsRow, #settingsPopover .settingsRow{background:none; box-shadow:none; border-radius:0; border-top:1.5px solid #efecf7;
     padding:14px 0; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:8px;}
-  details.menu .settingsRow:first-child{border-top:none; padding-top:6px;}
-  details.menu .settingsRow label{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#8a7fb0;}
-  details.menu .settingsRow .opts{display:flex; flex-wrap:nowrap; gap:0; background:#f4f2fa; border-radius:12px; padding:3px;}
-  details.menu .settingsRow .opts .miniBtn{flex:1; background:transparent; border-radius:9px; padding:9px 6px;
-    font-size:13px; line-height:1.2; color:#5b5570;}
-  details.menu .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15);}
-  .rowHint{font-size:12px; line-height:1.4; color:#7d7894;}
-  .nameInput{width:100%; border:2px solid #e6e3f0; border-radius:12px; padding:10px 12px; font-size:15px; font-family:inherit; background:#fff;}
-  details.menu .sub{font-size:13px; line-height:1.45; color:#7d7894; text-align:left; margin:2px 0 12px;}
+  details.menu .settingsRow:first-child, #settingsPopover .settingsRow:first-child{border-top:none; padding-top:6px;}
+  details.menu .settingsRow label, #settingsPopover .settingsRow label{font-size:var(--fs-xs); font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#8a7fb0;}
+  details.menu .settingsRow .opts, #settingsPopover .settingsRow .opts{display:flex; flex-wrap:nowrap; gap:0; background:#f4f2fa; border-radius:12px; padding:3px;}
+  details.menu .settingsRow .opts .miniBtn, #settingsPopover .settingsRow .opts .miniBtn{flex:1; height:52px; display:flex; align-items:center; justify-content:center; text-align:center; background:transparent; border-radius:9px; padding:4px 6px;
+    font-size:var(--fs-sm); line-height:1.2; color:#5b5570;}
+  details.menu .settingsRow .opts .miniBtn.on, #settingsPopover .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15);}
+  .rowHint{font-size:var(--fs-xs); line-height:1.4; color:#7d7894;}
+  .nameInput{width:100%; border:2px solid #e6e3f0; border-radius:12px; padding:10px 12px; font-size:var(--fs-md); font-family:inherit; background:#fff;}
+  details.menu .sub{font-size:var(--fs-sm); line-height:1.45; color:#7d7894; text-align:left; margin:2px 0 12px;}
   details.menu .mediaManager{max-width:none; gap:10px;}
   details.menu .mediaRow.mediaCard{background:#faf9fe; border:1.5px solid #ece9f5; box-shadow:none; border-radius:16px; padding:12px; gap:10px;}
   details.menu .mediaFieldLabel{display:none;}
   details.menu .mediaActions{gap:8px;}
   details.menu .mediaActions .mediaField{flex:1 1 180px;}
   details.menu .mediaFieldInput{width:100%; background:#fff; border-color:#e6e3f0;}
-  details.menu .miniBtn{background:#ece9f5; color:#5b5570; font-size:13px; padding:8px 12px; border-radius:12px;}
-  details.menu .settingsRow .opts .miniBtn{background:transparent;}
-  details.menu .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff;}
-  details.menu .miniBtn.primaryMini{background:var(--green); color:#fff;}
-  details.menu .miniBtn:disabled{opacity:.6;}
+  details.menu .miniBtn, #settingsPopover .miniBtn{background:#ece9f5; color:#5b5570; font-size:var(--fs-sm); padding:8px 12px; border-radius:12px;}
+  details.menu .settingsRow .opts .miniBtn, #settingsPopover .settingsRow .opts .miniBtn{background:transparent;}
+  details.menu .settingsRow .opts .miniBtn.on, #settingsPopover .settingsRow .opts .miniBtn.on{background:var(--green); color:#fff;}
+  details.menu .miniBtn.primaryMini, #settingsPopover .miniBtn.primaryMini{background:var(--green); color:#fff;}
+  details.menu .miniBtn:disabled, #settingsPopover .miniBtn:disabled{opacity:.6;}
+
+  /* Settings popover, opens just below the gear button */
+  #settingsBackdrop{position:absolute; inset:0; z-index:48; background:rgba(40,30,70,.18);}
+  #settingsPopover{position:absolute; top:58px; right:10px; z-index:49; width:min(340px,calc(100% - 20px));
+    max-height:calc(100% - 70px); overflow-y:auto; background:#fff; border-radius:18px; padding:14px 16px 8px;
+    box-shadow:0 8px 30px rgba(40,30,70,.28);}
+  #settingsPopover[hidden], #settingsBackdrop[hidden]{display:none;}
+  .popTitle{font-size:var(--fs-md); font-weight:800; color:#6b5b95; padding-bottom:6px;}
+  #settingsPopover .settingsGrid{max-width:none; gap:0;}
+  .voiceOpts{display:flex; gap:8px; align-items:center;}
+  #settingsPopover .settingsRow .opts .miniBtn{height:44px;}
 </style>
 </head>
 <body>
 <div id="app">
   <canvas id="confettiCanvas"></canvas>
+  <div id="settingsBackdrop" hidden></div>
+  <div id="settingsPopover" hidden>
+    <div class="popTitle">Settings</div>
+    <div class="settingsGrid" id="settingsGrid"></div>
+  </div>
   <div id="floatBtns">
     <button id="homeBtn" class="floatBtn" title="Go to main page">🏠</button>
     <button id="gearBtn" class="floatBtn" title="Settings">⚙️</button>
@@ -202,14 +219,10 @@
     <div class="stage"><div class="sceneEmoji" id="startEmoji">🔍</div></div>
     <div class="menuStack" id="startMenus"></div>
     <button class="bigBtn btn-mint" id="startPlayBtn">▶️ Start Playing</button>
-    <footer class="tiny">Rainbow Centre · AHS Game Library</footer>
+    <footer class="tiny">Rainbow Centre · AHS Game Library · Offline single-file game</footer>
   </div>
 
   <!-- SETTINGS SCREEN -->
-  <div class="screen" id="screen-settings">
-    <h2>⚙️ Teacher Settings</h2>
-    <div class="settingsGrid" id="settingsGrid"></div>
-  </div>
 
   <!-- GAME SCREEN -->
   <div class="screen" id="screen-game">
@@ -225,7 +238,7 @@
         <div class="sentenceStrip" id="sentenceStrip" style="display:none;"></div>
         <div class="revealPanel" id="revealPanel" style="display:none;">
           <div class="emoji" id="revealEmoji">🎉</div>
-          <div id="revealAnswer" style="font-size:clamp(18px,3vw,24px);font-weight:800;color:#4a4a5a;margin:6px 0 2px;"></div>
+          <div id="revealAnswer" style="font-size:var(--fs-lg);font-weight:800;color:#4a4a5a;margin:6px 0 2px;"></div>
           <div id="revealText"></div>
           <button class="bigBtn btn-mint" id="nextRoundBtn">Next ➜</button>
         </div>
@@ -332,7 +345,7 @@ function speak(text,opts){
   }catch(e){}
 }
 try{ window.speechSynthesis.addEventListener('voiceschanged',()=>{
-  if(document.getElementById('screen-settings')&&document.getElementById('screen-settings').classList.contains('active')) renderSettings();
+  if(!document.getElementById('settingsPopover').hidden) renderSettings();
 }); }catch(e){}
 function unlockAudioAndSpeech(){
   ensureAudio();
@@ -640,7 +653,7 @@ const SCENARIOS=[
  {id:'bus_arrives',level:1,wh:'what',beforeIcon:'bus_stop',afterIcon:'bus',anim:'walk-in',sound:'engine',
   prompt:'Something has arrived! Ask a question.',question:'What has arrived?',
   tokens:['What','has','arrived','?'], answer:'The bus arrived', answerIcon:'bus',
-  revealIcon:'bus', reveal:"Let's stand in line to board the bus!"},
+  revealIcon:'bus', reveal:"It's the school bus, ready to take everyone home!"},
  {id:'kids_play',level:1,wh:'what',beforeIcon:'toy_blocks',afterIcon:'toy_blocks_ball',anim:'shake',sound:'buzz',
   prompt:'Look at the video! Ask a question.',question:'What happened?',
   tokens:['What','happened','?'], answer:'Children are sharing toys', answerIcon:'toy_blocks_ball',
@@ -720,9 +733,16 @@ function showScreen(id,opts){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.getElementById('homeBtn').style.display = (id==='screen-start')?'none':'block';
+  setSettingsOpen(false);
+}
+/* Settings popover: opened by the gear (which becomes an X), closed by the X, the home button or tapping outside */
+function setSettingsOpen(open){
+  const pop=document.getElementById('settingsPopover'), back=document.getElementById('settingsBackdrop');
   const gear=document.getElementById('gearBtn');
-  gear.textContent = (id==='screen-settings') ? '✕' : '⚙️';
-  gear.title = (id==='screen-settings') ? 'Close settings' : 'Settings';
+  if(open){ renderSettings(); }
+  pop.hidden=!open; back.hidden=!open;
+  gear.textContent = open ? '✕' : '⚙️';
+  gear.title = open ? 'Close settings' : 'Settings';
 }
 function goBack(){
   const prev=screenHistory.pop();
@@ -730,10 +750,11 @@ function goBack(){
 }
 document.getElementById('homeBtn').addEventListener('click',()=>{ stopGame(); screenHistory=[]; showScreen('screen-start',{push:false}); });
 document.getElementById('gearBtn').addEventListener('click',()=>{
-  const onSettings=document.getElementById('screen-settings').classList.contains('active');
-  if(onSettings){ goBack(); return; }          // ✕ closes settings
-  unlockAudioAndSpeech(); renderSettings(); showScreen('screen-settings');
+  const isOpen=!document.getElementById('settingsPopover').hidden;
+  if(!isOpen) unlockAudioAndSpeech();
+  setSettingsOpen(!isOpen);
 });
+document.getElementById('settingsBackdrop').addEventListener('click',()=>setSettingsOpen(false));
 
 /* ================= SETTINGS RENDER ================= */
 /* ================= START-SCREEN MENUS ================= */
@@ -826,9 +847,9 @@ function renderSettings(){
 
   const voiceRow=document.createElement('div'); voiceRow.className='settingsRow';
   voiceRow.innerHTML='<label>Voice</label>';
-  const voiceOpts=document.createElement('div'); voiceOpts.className='opts';
+  const voiceOpts=document.createElement('div'); voiceOpts.className='voiceOpts';
   const sel=document.createElement('select');
-  sel.style.cssText='border:2px solid #e6e3f0;border-radius:12px;padding:8px 10px;font-size:14px;font-family:inherit;background:#fff;max-width:230px;';
+  sel.style.cssText='border:2px solid #e6e3f0;border-radius:12px;padding:8px 10px;font-size:var(--fs-md);font-family:inherit;background:#fff;flex:1;min-width:0;';
   const ranked=rankedVoices();
   const auto=document.createElement('option'); auto.value='';
   auto.textContent='Auto — most natural available'+(ranked[0]?' ('+ranked[0].name+')':'');
@@ -1047,12 +1068,12 @@ function togglePreview(scenarioId,btn,card){
   if(!display){ return; }
   if(display.kind!=='file'){
     slot.innerHTML=`<div style="height:220px;"><iframe src="${display.embedUrl}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen style="width:100%;height:100%;border:0;border-radius:14px;background:#111;"></iframe></div>
-      <div style="font-size:12px;opacity:.7;margin-top:4px;text-align:center;">By default the picture comes from the video's own thumbnail. If it isn't a good one, take a screenshot of the moment you want and use <b>🖼️ Upload Picture</b> above.</div>`;
+      <div style="font-size:var(--fs-xs);opacity:.7;margin-top:4px;text-align:center;">By default the picture comes from the video's own thumbnail. If it isn't a good one, take a screenshot of the moment you want and use <b>🖼️ Upload Picture</b> above.</div>`;
     slot.dataset.open='1'; btn.textContent='✕ Close Preview';
     return;
   }
   const frameBtnHtml = `<div style="margin-top:6px;text-align:center;">
-      <div style="font-size:12px;opacity:.7;margin-bottom:4px;">Pause on the moment you want as the picture, then tap the button.</div>
+      <div style="font-size:var(--fs-xs);opacity:.7;margin-bottom:4px;">Pause on the moment you want as the picture, then tap the button.</div>
       <button class="miniBtn" id="setframe-${scenarioId}">📸 Use This Frame as Picture</button></div>`;
   slot.innerHTML=`<video src="${display.url}" ${entry&&entry.cors?'crossorigin="anonymous"':''} controls playsinline style="width:100%;max-height:240px;border-radius:14px;background:#111;"></video>
     ${frameBtnHtml}
@@ -1378,7 +1399,7 @@ function endSession(){
   const stars = pct>=90?'⭐⭐⭐':pct>=60?'⭐⭐':'⭐';
   document.getElementById('starRow').textContent=stars;
   const name=SETTINGS.studentName? SETTINGS.studentName+', ':'';
-  document.getElementById('summaryText').textContent=`${name}You played ${roundQueue.length} rounds today. Keep asking great questions!`;
+  document.getElementById('summaryText').textContent=`${name}you played ${roundQueue.length} rounds today. Keep asking great questions!`;
   showScreen('screen-summary');
   burstConfetti();
   playSound('fanfare');
