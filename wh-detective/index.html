@@ -223,7 +223,7 @@
     <div class="stage"><div class="sceneEmoji" id="startEmoji">🔍</div></div>
     <div class="menuStack" id="startMenus"></div>
     <button class="bigBtn btn-mint" id="startPlayBtn">▶️ Start Playing</button>
-    <footer class="tiny">Rainbow Centre · AHS Game Library</footer>
+    <footer class="tiny">Rainbow Centre · AHS Game Library · Offline single-file game</footer>
   </div>
 
   <!-- SETTINGS SCREEN -->
@@ -408,6 +408,17 @@ const DEFAULT_VIDEO_URLS={
   bus_arrives: [VIDEO_BASE+'bus_arrives.mp4', VIDEO_BASE+'bus_stop.mp4'],
 };
 
+/* Default answer-button pictures (PNG), keyed by the video's file name without .mp4.
+   A video listed here uses its PNG as the picture; others use an automatic snapshot of the video.
+   A picture chosen in Settings (frame picker or upload) always wins. If a PNG can't be loaded, the snapshot is used. */
+const DEFAULT_PICTURES={
+  bus_stop:    VIDEO_BASE+'bus_stop.png',
+  cup_break:   VIDEO_BASE+'cup_break.png',
+  kids_play:   VIDEO_BASE+'kids_play.png',
+  green_light: VIDEO_BASE+'green_light.png',
+  egg_crack:   VIDEO_BASE+'egg_crack.png',
+};
+
 let customMediaCache={};  // scenarioId -> {type:'video', url, thumb, defaultThumb, cors, error}  (teacher's own URL)
 let bundledMediaCache={}; // scenarioId -> current default video {url, thumb, defaultThumb, cors, variants, idx}
 
@@ -510,7 +521,7 @@ function rotateBundledVideo(id){
    - Otherwise several moments are tried and the first one that isn't (nearly) black is used.
    Resolves {ok, thumb, error}: ok = the video loads; thumb may be null if the picture couldn't be taken. */
 const THUMB_MIN_BRIGHTNESS=25; // 0 = pure black, 255 = pure white
-function captureOnce(url,id,altId,cors){
+function captureOnce(url,id,altId,cors,metaOnly){
   return new Promise((resolve)=>{
     let settled=false, started=false, best=null, bestLum=-1, timer=null, loaded=false;
     const finish=(val)=>{ if(settled) return; settled=true; clearTimeout(timer); resolve(val); };
@@ -543,6 +554,7 @@ function captureOnce(url,id,altId,cors){
     const begin=async()=>{
       loaded=true;
       if(started) return; started=true;
+      if(metaOnly){ finish({ok:true,thumb:null,error:null}); return; }   // a PNG picture is used, so no snapshot needed
       try{
         const dur=vid.duration||1, last=Math.max(0,dur-0.05);
         const explicit=(id in THUMB_TIMES)||(altId&&(altId in THUMB_TIMES));
@@ -568,10 +580,10 @@ function captureOnce(url,id,altId,cors){
     timer=setTimeout(()=>finish({ok:true,thumb:best,error:best?null:'The picture was not ready in time.'}),15000);
   });
 }
-async function captureThumbFromVideoSrc(url,id,altId){
-  let r=await captureOnce(url,id,altId,true);          // best case: website allows frame capture (CORS)
+async function captureThumbFromVideoSrc(url,id,altId,metaOnly){
+  let r=await captureOnce(url,id,altId,true,metaOnly);          // best case: website allows frame capture (CORS)
   if(r.ok) return Object.assign(r,{cors:true});
-  const plain=await captureOnce(url,id,altId,false);   // fallback: plays fine, but no automatic picture
+  const plain=await captureOnce(url,id,altId,false,metaOnly);   // fallback: plays fine, but no automatic picture
   if(plain.ok) return {ok:true,thumb:null,cors:false,error:'The video plays, but this website does not allow taking a picture from it.'};
   return {ok:false,thumb:null,cors:false,error:r.error||plain.error};
 }
@@ -589,22 +601,23 @@ function saveThumbOverride(key,url){
    early — or on a slow phone connection — still plays the video instead of the default animation. */
 function seedMedia(){
   const overrides=loadThumbOverrides(), customs=loadCustomUrls();
-  const mk=(url)=>{
+  const mk=(url,isDefault)=>{
     const info=parseVideoUrl(url); if(!info) return null;
-    const e={url,kind:info.kind,thumb:overrides[url]||null,defaultThumb:null,cors:false,error:null};
+    const png=isDefault?DEFAULT_PICTURES[fileKeyFromUrl(url)]:null;
+    const e={url,kind:info.kind,thumb:overrides[url]||png||null,defaultThumb:png||null,cors:false,error:null};
     if(info.kind!=='file'){ e.embedUrl=info.embedUrl; e.thumb=overrides[url]||info.thumbUrl; e.defaultThumb=info.thumbUrl; }
     return e;
   };
   SCENARIOS.forEach(sc=>{
     const cu=customs[sc.id];
     if(cu){ const e=mk(cu); if(e) customMediaCache[sc.id]=Object.assign({type:'video'},e); }
-    const vs=(DEFAULT_VIDEO_URLS[sc.id]||[]).map(mk).filter(Boolean);
+    const vs=(DEFAULT_VIDEO_URLS[sc.id]||[]).map(u=>mk(u,true)).filter(Boolean);
     if(vs.length){ bundledMediaCache[sc.id]={variants:vs}; setBundledCurrent(sc.id,Math.floor(Math.random()*vs.length)); }
   });
 }
 async function probeScenarioMedia(sc){
   const overrides=loadThumbOverrides();
-  const entryFor=async(url)=>{
+  const entryFor=async(url,isDefault)=>{
     const info=parseVideoUrl(url);
     if(!info) return {failed:true,error:'That is not a valid web address.'};
     if(info.kind!=='file'){
@@ -613,18 +626,22 @@ async function probeScenarioMedia(sc){
       if(!okImg) return {failed:true,error:'Could not find this '+name+' video. '+(info.kind==='drive'?'Make sure sharing is set to "Anyone with the link can view".':'Check the link, and that the video is public or unlisted.')};
       return {url,kind:info.kind,embedUrl:info.embedUrl,thumb:overrides[url]||info.thumbUrl,defaultThumb:info.thumbUrl,cors:false,error:null};
     }
-    const r=await captureThumbFromVideoSrc(url,fileKeyFromUrl(url),sc.id);
-    return r.ok?{url,kind:'file',thumb:overrides[url]||r.thumb,defaultThumb:r.thumb,cors:r.cors,error:r.error}:{failed:true,error:r.error};
+    const pngUrl=isDefault?DEFAULT_PICTURES[fileKeyFromUrl(url)]:null;
+    const pngOk=pngUrl?await loadImageOk(pngUrl):false;
+    const r=await captureThumbFromVideoSrc(url,fileKeyFromUrl(url),sc.id,pngOk);
+    if(!r.ok) return {failed:true,error:r.error};
+    const defThumb=pngOk?pngUrl:r.thumb;
+    return {url,kind:'file',thumb:overrides[url]||defThumb,defaultThumb:defThumb,cors:r.cors,error:defThumb?null:r.error};
   };
   const customUrl=loadCustomUrls()[sc.id];
   if(!customUrl) delete customMediaCache[sc.id];
   if(customUrl){
-    const e=await entryFor(customUrl);
+    const e=await entryFor(customUrl,false);
     if(!e.failed) customMediaCache[sc.id]=Object.assign({type:'video'},e);
     else customMediaCache[sc.id]={type:'video',url:customUrl,thumb:null,defaultThumb:null,cors:false,error:e.error,broken:true};
     if(!e.failed) return;                       // a working teacher URL always wins
   }
-  const found=(await Promise.all((DEFAULT_VIDEO_URLS[sc.id]||[]).map(entryFor))).filter(e=>!e.failed);
+  const found=(await Promise.all((DEFAULT_VIDEO_URLS[sc.id]||[]).map(u=>entryFor(u,true)))).filter(e=>!e.failed);
   if(found.length){
     const prevUrl=bundledMediaCache[sc.id]&&bundledMediaCache[sc.id].url;
     let idx=found.findIndex(v=>v.url===prevUrl);
@@ -685,7 +702,7 @@ const SCENARIOS=[
  {id:'bus_arrives',level:1,wh:'what',beforeIcon:'bus_stop',afterIcon:'bus',anim:'walk-in',sound:'engine',
   prompt:'Something has arrived! Ask a question.',question:'What has arrived?',
   tokens:['What','has','arrived','?'], answer:'The bus arrived', answerIcon:'bus',
-  revealIcon:'bus', reveal:"Let's stand in line to board!"},
+  revealIcon:'bus', reveal:"It's the school bus, ready to take everyone home!"},
  {id:'kids_play',level:1,wh:'what',beforeIcon:'toy_blocks',afterIcon:'toy_blocks_ball',anim:'shake',sound:'buzz',
   prompt:'Look at the video! Ask a question.',question:'What happened?',
   tokens:['What','happened','?'], answer:'Children are sharing toys', answerIcon:'toy_blocks_ball',
