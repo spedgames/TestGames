@@ -146,6 +146,68 @@ textarea.in{resize:vertical;min-height:84px}
   .tab{flex:none}
   .two{grid-template-columns:1fr}
 }
+/* ===== Phones only (portrait) ===== */
+@media (max-width:600px) and (orientation:portrait){
+  body{font-size:16px}
+  .layout{grid-template-rows:auto minmax(0,1fr)}
+  .video-wrap{aspect-ratio:16/9;height:auto;max-height:30dvh;width:100%;border-radius:16px}
+  .screen{padding:10px}
+  .card{border-radius:22px}
+  .hero{padding:22px 22px 18px}
+  .hero h1{font-size:38px}
+  .how-to{padding:18px 22px 22px;gap:12px}
+  .start-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .start-row .go{grid-column:1/-1}
+  .start-row .btn{padding:12px 10px;text-align:center}
+  .brand{display:none}
+  .topbar{justify-content:space-between}
+  .stars{font-size:18px}
+  #game{gap:8px}
+  .panel{position:relative;padding:12px;gap:8px;border-radius:18px}
+  .chip{display:none}
+  .story-head{position:absolute;top:10px;right:10px;z-index:1}
+  .small-btn{width:36px;height:36px;padding:0;display:grid;place-items:center;font-size:17px}
+  .lbl{display:none}
+  .story{font-size:15.5px;line-height:1.35;padding:8px 52px 8px 12px;border-left-width:5px}
+  .question{font-size:22px}
+  .q-label{font-size:.55em;padding:2px 8px}
+  .answers{gap:8px}
+  .answers.feelings{height:auto;max-height:none;flex:1}
+  .ans{font-size:17.5px;padding:10px 14px;border-width:2px;border-radius:14px}
+  .feelings .ans{font-size:15px;gap:2px}
+  .feelings .ans .em{font-size:34px}
+  .foot{min-height:44px;gap:8px}
+  .feedback{font-size:14px;line-height:1.25}
+  .foot .btn{padding:10px 18px;font-size:16px;white-space:nowrap}
+  dialog{width:96vw;border-radius:18px}
+  .m-head{padding:12px 16px}.m-head h2{font-size:20px}
+  .form{padding:14px 16px}
+  .m-foot{padding:10px 16px}
+  .st-body{padding:4px 16px}
+}
+/* ===== Phones only (landscape) ===== */
+@media (max-height:520px) and (max-width:950px) and (orientation:landscape){
+  .layout{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+  .video-wrap{height:100%;aspect-ratio:auto;max-height:none;border-radius:16px}
+  .story{font-size:14px;padding:8px 14px}
+  .question{font-size:20px}
+  .ans{font-size:15px;padding:6px 14px}
+  .feelings .ans .em{font-size:30px}
+  .feedback{font-size:14px}
+  .screen{padding:8px}
+  #game{gap:6px}
+  .brand{display:none}
+  .panel{padding:10px 14px;gap:6px}
+  .answers.feelings{height:auto;flex:1;max-height:none}
+  .foot{min-height:38px}
+  .hero{padding:14px 28px}.hero h1{font-size:30px}
+  .hero h1 br{display:none}
+  .how-to{padding:12px 28px;gap:8px}
+  .rule b{width:28px;height:28px;font-size:15px}
+  .start-row{margin-top:2px}
+  .btn{padding:8px 20px;font-size:15px}
+  .end-body{padding:14px}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -189,7 +251,7 @@ textarea.in{resize:vertical;min-height:84px}
     <section class="panel">
       <div class="story-head">
         <span class="chip" id="chip"></span>
-        <button class="small-btn" id="readBtn" type="button">🔊 Read aloud</button>
+        <button class="small-btn" id="readBtn" type="button">🔊<span class="lbl"> Read aloud</span></button>
       </div>
       <p class="story" id="story"></p>
       <h2 class="question" id="question"></h2>
@@ -264,16 +326,16 @@ const DEFAULTS = [
    wrong:['Because Kayden does not like plasters.','Because Kayden likes scissors.']},
   {name:'Nora', video:'assets/videogame.mp4', feeling:'Angry',
    text:'Nora is playing a video game. The game is Super Mario. She is losing in the game.',
-   why:'Because Nora is losing.',
-   wrong:['Because Nora does not like video games.','Because Super Mario is not fun.']},
+   why:'Because she is losing.',
+   wrong:['Because she does not like video games.','Because Super Mario is not fun.']},
   {name:'Sofia', video:'assets/carnival.mp4', feeling:'Scared',
    text:'Sofia is going on a carnival ride. She does not like heights. The ride will bring her very high up, then drop her down very quickly.',
-   why:'Because the ride will bring Sofia very high up.',
+   why:'Because the ride will bring her very high up.',
    wrong:['Because Sofia is scared of carnivals.','Because Sofia likes being dropped quickly.']},
   {name:'Dylan', video:'assets/birthday.mp4', feeling:'Happy',
-   text:'Dylan is having a birthday party. His friends are celebrating his birthday at home. They are singing and wearing party hats.',
+   text:'Dylan is having a birthday party. His friends and family are celebrating his birthday at home. They bought his favourite food and he gets many presents.',
    why:'Because he is celebrating his birthday.',
-   wrong:['Because Dylan does not like party hats.','Because Dylan likes being at home.']}
+   wrong:['Because he does not like birthdays.','Because Dylan likes being at home.']}
 ];
 const KEY = 'feelingsDetectives.stories.v1';
 const clone = o => JSON.parse(JSON.stringify(o));
