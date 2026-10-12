@@ -95,19 +95,20 @@ button{cursor:pointer}
 /* Editor modal */
 dialog{border:0;border-radius:24px;padding:0;width:min(980px,96vw);max-height:94dvh;color:var(--ink);background:var(--panel);box-shadow:0 20px 60px rgba(14,34,54,.4)}
 dialog[open]{display:flex;flex-direction:column}
+#editor{height:min(720px,94vh);height:min(720px,94dvh)}
 dialog::backdrop{background:rgba(14,34,54,.62)}
 .m-head{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:2px solid var(--line);flex:none}
 .m-head h2{font-family:var(--head);margin:0;font-size:24px}
 .x{border:0;background:#EEF3F8;width:40px;height:40px;border-radius:50%;font-size:22px;line-height:1}
 .x:hover{background:var(--line)}
-.m-body{display:grid;grid-template-columns:190px 1fr;min-height:0;flex:1;overflow:hidden}
-.tabs{display:flex;flex-direction:column;gap:6px;padding:14px;border-right:2px solid var(--line);overflow-y:auto;background:#F7FAFD}
+.m-body{display:grid;grid-template-columns:190px 1fr;grid-template-rows:minmax(0,1fr);min-height:0;flex:1 1 0;overflow:hidden}
+.tabs{min-height:0;display:flex;flex-direction:column;gap:6px;padding:14px;border-right:2px solid var(--line);overflow-y:auto;background:#F7FAFD}
 .tab{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid transparent;background:transparent;border-radius:12px;padding:8px 10px;font-weight:800}
 .tab:hover{background:#EAF1FF}
 .tab[aria-selected="true"]{background:#fff;border-color:var(--blue);color:var(--blue-d)}
 .tab .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--sun);color:var(--ink);display:grid;place-items:center;font-size:.8em}
 .tab.err .n{background:var(--coral);color:#fff}
-.form{padding:18px 24px;overflow-y:auto;display:grid;gap:14px;align-content:start}
+.form{min-height:0;padding:18px 24px;overflow-y:auto;display:grid;gap:14px;align-content:start}
 .field label,.field .lab{display:block;font-weight:800;margin-bottom:4px;font-size:.92em}
 .field small{display:block;color:var(--muted);font-weight:600;margin-top:3px;font-size:.78em}
 .in{width:100%;border:3px solid var(--line);border-radius:12px;padding:8px 12px;background:#fff;font-weight:700}
@@ -129,7 +130,7 @@ textarea.in{resize:vertical;min-height:84px}
 .m-foot .btn{padding:9px 22px;font-size:1em}
 .link{border:0;background:none;color:var(--muted);text-decoration:underline;font-weight:700;font-size:.9em}
 
-.small{width:min(560px,94vw)}
+.small{width:min(560px,94vw);height:auto}
 .st-body{padding:8px 24px;overflow-y:auto}
 .st-row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 0;border-bottom:2px solid var(--line)}
 .st-row:last-child{border-bottom:0}
@@ -141,7 +142,7 @@ textarea.in{resize:vertical;min-height:84px}
   .layout{grid-template-columns:1fr;grid-template-rows:minmax(0,34dvh) minmax(0,1fr)}
   .hero .faces{display:none}
   .video-wrap{border-radius:18px}
-  .m-body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .m-body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
   .tabs{flex-direction:row;border-right:0;border-bottom:2px solid var(--line);overflow-x:auto;overflow-y:hidden}
   .tab{flex:none}
   .two{grid-template-columns:1fr}
@@ -547,7 +548,8 @@ function videoStatus(){
 function openEditor(){
   draft = clone(STORIES); cur = 0; bad = new Set();
   $('edMsg').textContent='';
-  renderTabs(); renderForm(); ed.showModal();
+  renderTabs(); renderForm();
+  if (ed.showModal) ed.showModal(); else ed.setAttribute('open','');
 }
 function validate(){
   bad = new Set(); let first = null;
