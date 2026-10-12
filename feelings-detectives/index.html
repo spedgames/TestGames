@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How &amp; Why: Feelings Detectives</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16324F; --muted:#51697F; --bg:#F2F7FB; --panel:#FFFFFF; --line:#D5E2EE;
+  --blue:#2F6FED; --blue-d:#1F55C4; --sun:#FFC83D; --green:#1F9D6B; --green-bg:#E3F6EC;
+  --coral:#E0553A; --coral-bg:#FDECE7; --violet:#7A4FD6;
+  --head:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  --body:'Nunito','Segoe UI',system-ui,sans-serif;
+  --pad:clamp(10px,2vh,24px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font-family:var(--body);color:var(--ink);background:var(--bg);font-size:clamp(15px,2.3vh,20px);line-height:1.35;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:4px solid var(--sun);outline-offset:2px}
+.screen{display:none;height:100dvh;padding:var(--pad)}
+.screen.active{display:flex}
+
+/* Start + end */
+#start,#end{align-items:center;justify-content:center}
+.card{background:var(--panel);border-radius:28px;box-shadow:0 10px 40px rgba(22,50,79,.12);max-width:880px;width:100%;max-height:100%;overflow:hidden;display:flex;flex-direction:column}
+.hero{background:var(--blue);color:#fff;padding:clamp(16px,4vh,40px) clamp(22px,4vw,44px);position:relative}
+.hero h1{font-family:var(--head);font-size:clamp(30px,6.5vh,56px);line-height:1.05;margin:0 0 8px;font-weight:700}
+.hero p{margin:0;font-size:1.05em;max-width:34ch;opacity:.95}
+.hero .faces{position:absolute;right:36px;top:50%;transform:translateY(-50%);font-size:clamp(36px,8vh,64px);display:flex;gap:6px;flex-wrap:wrap;width:230px;justify-content:center}
+.how-to{padding:clamp(14px,3vh,32px) clamp(22px,4vw,44px) clamp(16px,3.5vh,36px);display:grid;gap:clamp(8px,1.8vh,18px)}
+.how-to h2{font-family:var(--head);font-size:clamp(20px,3.4vh,28px);margin:0}
+.rule{display:flex;gap:14px;align-items:center}
+.rule b{flex:none;width:clamp(32px,5vh,44px);height:clamp(32px,5vh,44px);border-radius:50%;background:var(--sun);display:grid;place-items:center;font-family:var(--head);font-size:clamp(17px,2.8vh,24px)}
+.btn{border:0;border-radius:18px;padding:clamp(10px,1.8vh,16px) clamp(20px,3vw,34px);background:var(--blue);color:#fff;font-weight:800;font-size:1.05em;box-shadow:0 5px 0 var(--blue-d);transition:transform .08s,box-shadow .08s}
+.btn:hover{background:#3B7BFF}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--blue-d)}
+.btn.go{background:var(--green);box-shadow:0 5px 0 #157A52}
+.btn.go:hover{background:#25AE79}
+.btn.go:active{box-shadow:0 1px 0 #157A52}
+.btn.ghost{background:#fff;color:var(--blue-d);border:3px solid var(--line);box-shadow:0 5px 0 var(--line)}
+.btn.ghost:hover{border-color:var(--blue);background:#F5F9FF}
+.btn.ghost:active{box-shadow:0 1px 0 var(--line)}
+.start-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
+
+/* Game */
+#game{flex-direction:column;gap:clamp(8px,1.6vh,16px);max-width:1280px;margin:0 auto;width:100%}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:none}
+.brand{font-family:var(--head);font-weight:600;font-size:clamp(17px,3vh,22px)}
+.dots{display:flex;gap:8px;align-items:center}
+.dot{width:clamp(11px,1.8vh,16px);height:clamp(11px,1.8vh,16px);border-radius:50%;background:var(--line);transition:background .2s}
+.dot.done{background:var(--green)}
+.dot.now{background:var(--sun);box-shadow:0 0 0 4px rgba(255,200,61,.35)}
+.stars{font-family:var(--head);font-size:clamp(17px,3vh,22px);font-weight:600}
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:clamp(12px,2.4vh,24px);flex:1;min-height:0}
+.video-wrap{background:#0E2236;border-radius:24px;overflow:hidden;position:relative;min-height:0;height:100%}
+.video-wrap video,.video-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0E2236;object-fit:contain}
+.video-wrap iframe{display:none}
+.video-wrap.embed iframe{display:block}
+.video-wrap.embed video{display:none}
+.video-fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#C8D8E8;padding:24px;font-size:.9em;background:#0E2236}
+.video-wrap.broken .video-fallback{display:flex}
+.panel{background:var(--panel);border-radius:24px;padding:clamp(12px,2.6vh,28px);box-shadow:0 6px 26px rgba(22,50,79,.08);display:flex;flex-direction:column;gap:clamp(8px,1.6vh,16px);min-height:0;overflow-y:auto}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none}
+.chip{background:#EAF1FF;color:var(--blue-d);font-weight:800;border-radius:999px;padding:3px 14px;font-size:.8em}
+.small-btn{border:2px solid var(--line);background:#fff;border-radius:999px;padding:4px 14px;font-weight:700;font-size:.8em}
+.small-btn:hover{border-color:var(--blue);color:var(--blue-d)}
+.story{font-size:clamp(17px,3.1vh,27px);line-height:1.4;margin:0;padding:clamp(10px,2vh,22px) 20px;border-left:6px solid var(--sun);background:#FFF9E5;border-radius:0 14px 14px 0;flex:none}
+.question{font-family:var(--head);font-size:clamp(26px,5vh,44px);line-height:1.15;margin:0;font-weight:600;flex:none}
+.q-label{font-family:var(--head);font-weight:600;font-size:.5em;color:#fff;background:var(--blue);display:inline-block;border-radius:8px;padding:2px 10px;margin-right:8px;vertical-align:middle}
+.q-label.why{background:var(--violet)}
+.answers{display:grid;gap:clamp(8px,1.6vh,16px);flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}
+.answers.feelings{grid-template-columns:repeat(3,1fr);flex:0 1 auto;max-height:min(100%,300px);height:clamp(110px,26vh,260px);grid-auto-rows:minmax(0,1fr)}
+.ans{background:#fff;border:3px solid var(--line);border-radius:16px;padding:clamp(8px,1.6vh,18px) 20px;text-align:left;font-weight:800;font-size:clamp(17px,3vh,27px);line-height:1.25;display:flex;align-items:center;transition:transform .1s,border-color .15s,background .15s}
+.ans:hover:not(:disabled){border-color:var(--blue);transform:translateY(-2px)}
+.feelings .ans{text-align:center;flex-direction:column;justify-content:center;gap:4px;padding:6px}
+.feelings .ans .em{font-size:clamp(38px,9vh,78px);line-height:1}
+.ans.correct{background:var(--green-bg);border-color:var(--green);color:#0F6A47}
+.ans.wrong{background:var(--coral-bg);border-color:var(--coral);color:#9A3420;animation:shake .35s}
+.ans:disabled{cursor:default}
+.answers.locked .ans:not(.correct){opacity:.55}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.foot{margin-top:0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-height:clamp(44px,7vh,64px)}
+.feedback{font-weight:800;font-size:clamp(16px,2.6vh,23px)}
+.feedback.good{color:#0F6A47}.feedback.bad{color:#9A3420}
+
+/* End */
+.end-body{padding:clamp(18px,4vh,44px);text-align:center;display:grid;gap:clamp(8px,1.6vh,14px);justify-items:center}
+.big-stars{font-size:clamp(32px,7vh,56px);letter-spacing:6px}
+.score{font-size:1.15em;color:var(--muted);margin:0}
+
+/* Editor modal */
+dialog{border:0;border-radius:24px;padding:0;width:min(980px,96vw);max-height:94dvh;color:var(--ink);background:var(--panel);box-shadow:0 20px 60px rgba(14,34,54,.4)}
+dialog[open]{display:flex;flex-direction:column}
+dialog::backdrop{background:rgba(14,34,54,.62)}
+.m-head{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:2px solid var(--line);flex:none}
+.m-head h2{font-family:var(--head);margin:0;font-size:24px}
+.x{border:0;background:#EEF3F8;width:40px;height:40px;border-radius:50%;font-size:22px;line-height:1}
+.x:hover{background:var(--line)}
+.m-body{display:grid;grid-template-columns:190px 1fr;min-height:0;flex:1;overflow:hidden}
+.tabs{display:flex;flex-direction:column;gap:6px;padding:14px;border-right:2px solid var(--line);overflow-y:auto;background:#F7FAFD}
+.tab{display:flex;align-items:center;gap:10px;text-align:left;border:2px solid transparent;background:transparent;border-radius:12px;padding:8px 10px;font-weight:800}
+.tab:hover{background:#EAF1FF}
+.tab[aria-selected="true"]{background:#fff;border-color:var(--blue);color:var(--blue-d)}
+.tab .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--sun);color:var(--ink);display:grid;place-items:center;font-size:.8em}
+.tab.err .n{background:var(--coral);color:#fff}
+.form{padding:18px 24px;overflow-y:auto;display:grid;gap:14px;align-content:start}
+.field label,.field .lab{display:block;font-weight:800;margin-bottom:4px;font-size:.92em}
+.field small{display:block;color:var(--muted);font-weight:600;margin-top:3px;font-size:.78em}
+.in{width:100%;border:3px solid var(--line);border-radius:12px;padding:8px 12px;background:#fff;font-weight:700}
+.in:focus{border-color:var(--blue);outline:none}
+textarea.in{resize:vertical;min-height:84px}
+.in.bad{border-color:var(--coral);background:var(--coral-bg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pre{display:flex;align-items:stretch}
+.pre span{display:grid;place-items:center;padding:0 12px;background:#EAF1FF;color:var(--blue-d);font-weight:800;border:3px solid var(--line);border-right:0;border-radius:12px 0 0 12px}
+.pre .in{border-radius:0 12px 12px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.fchip{border:3px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-weight:800;display:flex;gap:6px;align-items:center}
+.fchip:hover{border-color:var(--blue)}
+.fchip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.vstat{font-weight:700;font-size:.8em;margin-top:4px}
+.vstat.ok{color:#0F6A47}.vstat.no{color:#9A3420}
+.m-foot{display:flex;align-items:center;gap:12px;padding:14px 24px;border-top:2px solid var(--line);flex:none;flex-wrap:wrap}
+.m-foot .msg{flex:1;font-weight:800;color:#9A3420;font-size:.9em;min-width:120px}
+.m-foot .btn{padding:9px 22px;font-size:1em}
+.link{border:0;background:none;color:var(--muted);text-decoration:underline;font-weight:700;font-size:.9em}
+
+.small{width:min(560px,94vw)}
+.st-body{padding:8px 24px;overflow-y:auto}
+.st-row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 0;border-bottom:2px solid var(--line)}
+.st-row:last-child{border-bottom:0}
+.st-lab strong{display:block;font-size:1.05em}
+.st-lab small{color:var(--muted);font-weight:600;font-size:.8em}
+.seg{display:flex;gap:8px}
+.seg .fchip{min-width:64px;justify-content:center;padding:8px 16px}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;grid-template-rows:minmax(0,34dvh) minmax(0,1fr)}
+  .hero .faces{display:none}
+  .video-wrap{border-radius:18px}
+  .m-body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .tabs{flex-direction:row;border-right:0;border-bottom:2px solid var(--line);overflow-x:auto;overflow-y:hidden}
+  .tab{flex:none}
+  .two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- START -->
+<main id="start" class="screen active">
+  <div class="card">
+    <div class="hero">
+      <h1>Feelings<br>Detectives</h1>
+      <p>Watch the clip. Read the clue. Find out how and why.</p>
+      <div class="faces" aria-hidden="true">😀 😢 😠 😨 😴</div>
+    </div>
+    <div class="how-to">
+      <h2>How to play</h2>
+      <div class="rule"><b>1</b><span>Watch the video and read the story.</span></div>
+      <div class="rule"><b>2</b><span><strong>How</strong> does the person feel? Tap the feeling.</span></div>
+      <div class="rule"><b>3</b><span><strong>Why</strong> do they feel that way? Tap the reason that matches the story.</span></div>
+      <div class="start-row">
+        <button class="btn go" id="startBtn">Start playing</button>
+        <button class="btn ghost" id="editBtn">✏️ Edit situations</button>
+        <button class="btn ghost" id="setBtn">⚙️ Settings</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- GAME -->
+<main id="game" class="screen" aria-live="polite">
+  <div class="topbar">
+    <div class="brand">Feelings Detectives</div>
+    <div class="dots" id="dots" aria-label="Progress"></div>
+    <div class="stars" id="stars" aria-label="Stars earned">⭐ 0</div>
+  </div>
+  <div class="layout">
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" muted loop playsinline controls preload="auto"></video>
+      <iframe id="frame" title="Situation video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div class="video-fallback" id="fallback">The video could not be loaded. Check the video link in Edit situations.</div>
+    </div>
+    <section class="panel">
+      <div class="story-head">
+        <span class="chip" id="chip"></span>
+        <button class="small-btn" id="readBtn" type="button">🔊 Read aloud</button>
+      </div>
+      <p class="story" id="story"></p>
+      <h2 class="question" id="question"></h2>
+      <div class="answers" id="answers"></div>
+      <div class="foot">
+        <div class="feedback" id="feedback" role="status"></div>
+        <button class="btn go" id="nextBtn" hidden>Next</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- END -->
+<main id="end" class="screen">
+  <div class="card">
+    <div class="hero"><h1>Case closed!</h1><p>You looked at the clues and found the answers.</p></div>
+    <div class="end-body">
+      <div class="big-stars" id="endStars" aria-hidden="true"></div>
+      <p class="score" id="endScore"></p>
+      <button class="btn go" id="againBtn">Play again</button>
+    </div>
+  </div>
+</main>
+
+<!-- SETTINGS -->
+<dialog id="settings" class="small" aria-labelledby="stTitle">
+  <div class="m-head"><h2 id="stTitle">Settings</h2><button class="x" id="stClose" aria-label="Close">×</button></div>
+  <div class="st-body">
+    <div class="st-row"><div class="st-lab"><strong>Sound effects</strong><small>Play a happy sound for a right answer.</small></div>
+      <div class="seg" data-key="sound" role="group" aria-label="Sound effects"><button class="fchip" data-v="on">On</button><button class="fchip" data-v="off">Off</button></div></div>
+    <div class="st-row"><div class="st-lab"><strong>Read text automatically</strong><small>Read each story and question aloud.</small></div>
+      <div class="seg" data-key="autoRead" role="group" aria-label="Read text automatically"><button class="fchip" data-v="on">On</button><button class="fchip" data-v="off">Off</button></div></div>
+    <div class="st-row"><div class="st-lab"><strong>Number of rounds</strong><small>How many stories in each game.</small></div>
+      <div class="seg" data-key="rounds" role="group" aria-label="Number of rounds"><button class="fchip" data-v="3">3</button><button class="fchip" data-v="5">5</button><button class="fchip" data-v="all">All</button></div></div>
+  </div>
+  <div class="m-foot"><span class="msg"></span><button class="btn go" id="stDone" type="button">Done</button></div>
+</dialog>
+
+<!-- EDITOR -->
+<dialog id="editor" aria-labelledby="edTitle">
+  <div class="m-head"><h2 id="edTitle">Edit situations</h2><button class="x" id="edClose" aria-label="Close">×</button></div>
+  <div class="m-body">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Situations"></div>
+    <div class="form" id="form"></div>
+  </div>
+  <div class="m-foot">
+    <button class="link" id="edReset" type="button">Reset to defaults</button>
+    <span class="msg" id="edMsg" role="alert"></span>
+    <button class="btn ghost" id="edCancel" type="button">Cancel</button>
+    <button class="btn go" id="edSave" type="button">Save changes</button>
+  </div>
+</dialog>
+
+<script>
+const FEELINGS = {Happy:'😀', Sad:'😢', Angry:'😠', Scared:'😨', Tired:'😴'};
+const DEFAULTS = [
+  {name:'Eric', video:'assets/dinosaurs.mp4', feeling:'Happy',
+   text:'Eric is at art class. The class made some dinosaurs. Eric loves playing with dinosaurs.',
+   why:'Because Eric loves playing with dinosaurs.',
+   wrong:['Because Eric likes his teacher.','Because Eric loves art class.']},
+  {name:'Adam', video:'assets/soccer.mp4', feeling:'Tired',
+   text:'Adam is playing soccer with friends. He is resting after playing for a few hours. He sits under the hot sun and wipes his sweat.',
+   why:'Because Adam played soccer for a few hours.',
+   wrong:['Because Adam is tired of his friends.','Because Adam is sweaty.']},
+  {name:'Ben', video:'assets/dog.mp4', feeling:'Happy',
+   text:'Ben is petting a dog. He loves dogs. This dog\u2019s name is Tobbie. Tobbie likes eating treats.',
+   why:'Because Ben likes dogs and gets to pet a dog.',
+   wrong:['Because Tobbie is cute.','Because Tobbie likes eating treats.']},
+  {name:'Kayden', video:'assets/plaster.mp4', feeling:'Sad',
+   text:'Kayden has a plaster on his fingers. He was using the scissors and cut himself.',
+   why:'Because Kayden is in pain.',
+   wrong:['Because Kayden does not like plasters.','Because Kayden likes scissors.']},
+  {name:'Nora', video:'assets/videogame.mp4', feeling:'Angry',
+   text:'Nora is playing a video game. The game is Super Mario. She is losing in the game.',
+   why:'Because Nora is losing.',
+   wrong:['Because Nora does not like video games.','Because Super Mario is not fun.']},
+  {name:'Sofia', video:'assets/carnival.mp4', feeling:'Scared',
+   text:'Sofia is going on a carnival ride. She does not like heights. The ride will bring her very high up, then drop her down very quickly.',
+   why:'Because the ride will bring Sofia very high up.',
+   wrong:['Because Sofia is scared of carnivals.','Because Sofia likes being dropped quickly.']},
+  {name:'Dylan', video:'assets/birthday.mp4', feeling:'Happy',
+   text:'Dylan is having a birthday party. His friends are celebrating his birthday at home. They are singing and wearing party hats.',
+   why:'Because he is celebrating his birthday.',
+   wrong:['Because Dylan does not like party hats.','Because Dylan likes being at home.']}
+];
+const KEY = 'feelingsDetectives.stories.v1';
+const clone = o => JSON.parse(JSON.stringify(o));
+function loadStories(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (Array.isArray(s) && s.length === DEFAULTS.length && s.every(x=>x && x.name && x.text && FEELINGS[x.feeling] && x.why && x.video && Array.isArray(x.wrong) && x.wrong.length===2)) return s;
+  }catch(e){}
+  return clone(DEFAULTS);
+}
+function saveStories(){ try{ localStorage.setItem(KEY, JSON.stringify(STORIES)); }catch(e){} }
+let STORIES = loadStories();
+
+const $ = id => document.getElementById(id);
+const esc = t => t.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const screens = {start:$('start'), game:$('game'), end:$('end')};
+let PLAY = [], idx = 0, step = 'how', stars = 0, missed = false, locked = false;
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const show = n => { Object.values(screens).forEach(s=>s.classList.remove('active')); screens[n].classList.add('active'); };
+
+/* ---------- Video links ---------- */
+function parseVideo(raw){
+  const url = (raw||'').trim();
+  let m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+  if (m) return {type:'YouTube', embed:`https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1&loop=1&playlist=${m[1]}&rel=0&playsinline=1`};
+  m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]+)/);
+  if (m) return {type:'Google Drive', embed:`https://drive.google.com/file/d/${m[1]}/preview`};
+  if (/^(https?:\/\/|assets\/|\.\/|\/)/i.test(url) || /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(url)) return {type:'Video file', src:url};
+  return null;
+}
+function setVideo(url){
+  const wrap=$('videoWrap'), v=$('video'), f=$('frame'), p=parseVideo(url);
+  wrap.classList.remove('broken','embed');
+  v.pause(); v.removeAttribute('src'); f.removeAttribute('src');
+  if (!p){ wrap.classList.add('broken'); return; }
+  if (p.embed){ wrap.classList.add('embed'); f.src = p.embed; }
+  else { v.onerror = ()=>wrap.classList.add('broken'); v.src = p.src; v.load(); v.play().catch(()=>{}); }
+}
+
+/* ---------- Settings & sound ---------- */
+const SKEY = 'feelingsDetectives.settings.v1';
+let SET = {sound:true, autoRead:false, rounds:'all'};
+try{ const x = JSON.parse(localStorage.getItem(SKEY)); if (x) { if (typeof x.sound==='boolean') SET.sound=x.sound; if (typeof x.autoRead==='boolean') SET.autoRead=x.autoRead; if (['3','5','all'].includes(String(x.rounds))) SET.rounds=String(x.rounds); } }catch(e){}
+let actx = null;
+function chime(n){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    if (actx.state==='suspended') actx.resume();
+    const notes = [523.25,659.25,783.99,1046.5].slice(4-n);
+    const t0 = actx.currentTime + .02;
+    notes.forEach((f,i)=>{
+      const o = actx.createOscillator(), g = actx.createGain(), t = t0 + i*.11;
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.22,t+.02); g.gain.exponentialRampToValueAtTime(.001,t+.45);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.5);
+    });
+  }catch(e){}
+}
+const stDlg = $('settings');
+function renderSettings(){
+  stDlg.querySelectorAll('.seg').forEach(g=>{
+    const k=g.dataset.key, cur = k==='rounds' ? SET.rounds : (SET[k]?'on':'off');
+    g.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===cur));
+  });
+}
+stDlg.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{
+  const k=b.parentElement.dataset.key, v=b.dataset.v;
+  SET[k] = k==='rounds' ? v : v==='on';
+  try{ localStorage.setItem(SKEY, JSON.stringify(SET)); }catch(e){}
+  renderSettings();
+  if (k==='sound' && v==='on') chime(4);
+}));
+$('setBtn').addEventListener('click',()=>{ renderSettings(); stDlg.showModal(); });
+$('stDone').addEventListener('click',()=>stDlg.close());
+$('stClose').addEventListener('click',()=>stDlg.close());
+
+/* ---------- Game ---------- */
+function renderDots(){
+  $('dots').innerHTML = PLAY.map((_,i)=>`<span class="dot ${i<idx?'done':i===idx?'now':''}"></span>`).join('');
+  $('stars').textContent = '⭐ ' + stars;
+}
+function loadStory(){
+  const s = PLAY[idx];
+  step='how'; missed=false;
+  $('chip').textContent = `Story ${idx+1} of ${PLAY.length}`;
+  $('story').textContent = s.text;
+  setVideo(s.video);
+  renderDots(); renderQuestion();
+  if (SET.autoRead) speak(s.text+' '+qText());
+}
+function renderQuestion(){
+  const s = PLAY[idx], box = $('answers');
+  locked=false; $('nextBtn').hidden=true;
+  $('feedback').className='feedback'; $('feedback').textContent='';
+  box.className='answers';
+  if (step==='how'){
+    $('question').innerHTML = `<span class="q-label">HOW</span>How is ${esc(s.name)} feeling?`;
+    box.classList.add('feelings');
+    const others = shuffle(Object.keys(FEELINGS).filter(f=>f!==s.feeling)).slice(0,2);
+    box.innerHTML = shuffle([s.feeling,...others]).map(f=>`<button class="ans" data-v="${f}"><span class="em" aria-hidden="true">${FEELINGS[f]}</span>${f}</button>`).join('');
+  } else {
+    $('question').innerHTML = `<span class="q-label why">WHY</span>Why is ${esc(s.name)} ${s.feeling.toLowerCase()}?`;
+    box.innerHTML = shuffle([s.why,...s.wrong]).map(t=>`<button class="ans" data-v="${esc(t)}">${esc(t)}</button>`).join('');
+  }
+  box.querySelectorAll('.ans').forEach(b=>b.addEventListener('click',()=>choose(b)));
+}
+function choose(btn){
+  if (locked) return;
+  const s = PLAY[idx], fb = $('feedback');
+  const right = step==='how' ? s.feeling : s.why;
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (btn.dataset.v === right){
+    if (SET.sound) chime(step==='how'?2:4);
+    locked=true; btn.classList.add('correct');
+    $('answers').classList.add('locked');
+    $('answers').querySelectorAll('.ans').forEach(b=>b.disabled=true);
+    fb.className='feedback good';
+    if (step==='how'){ fb.textContent=`Yes! ${s.name} is ${s.feeling.toLowerCase()}. Now find out why.`; $('nextBtn').textContent='Why?'; }
+    else {
+      if (!missed) stars++;
+      fb.textContent = missed ? 'You found it! Great job.' : 'Perfect! You earned a star.';
+      $('nextBtn').textContent = idx===PLAY.length-1 ? 'Finish' : 'Next story';
+      renderDots();
+    }
+    $('nextBtn').hidden=false; $('nextBtn').focus({preventScroll:true});
+  } else {
+    missed=true; btn.classList.add('wrong'); btn.disabled=true;
+    fb.className='feedback bad'; fb.textContent='Not quite. Read the story again and try another one.';
+  }
+}
+$('nextBtn').addEventListener('click',()=>{
+  if (step==='how'){ step='why'; renderQuestion(); if (SET.autoRead) speak(qText()); return; }
+  if (idx===PLAY.length-1){ finish(); return; }
+  idx++; loadStory();
+});
+const qText = () => $('question').textContent.replace(/^(HOW|WHY)/,'');
+function speak(t){
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t);
+  u.rate=.85; u.lang='en-GB'; speechSynthesis.speak(u);
+}
+$('readBtn').addEventListener('click',()=>speak($('story').textContent+' '+qText()));
+if (!('speechSynthesis' in window)) $('readBtn').hidden=true;
+function finish(){
+  setVideo('');
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  $('endStars').textContent='⭐'.repeat(stars)+'☆'.repeat(PLAY.length-stars);
+  $('endScore').textContent=`You got ${stars} of ${PLAY.length} stars on your first try.`;
+  show('end');
+}
+function startGame(){ PLAY=shuffle(STORIES).slice(0, SET.rounds==='all'?STORIES.length:+SET.rounds); idx=0; stars=0; show('game'); loadStory(); }
+$('startBtn').addEventListener('click',startGame);
+$('againBtn').addEventListener('click',()=>{ show('start'); });
+
+/* ---------- Editor ---------- */
+const ed = $('editor');
+let draft = [], cur = 0, bad = new Set();
+const strip = t => t.replace(/^\s*because\s*/i,'');
+
+function renderTabs(){
+  $('tabs').innerHTML = draft.map((d,i)=>`<button class="tab ${bad.has(i)?'err':''}" role="tab" aria-selected="${i===cur}" data-i="${i}"><span class="n">${i+1}</span>${esc(d.name||'Untitled')}</button>`).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{cur=+b.dataset.i; renderTabs(); renderForm();}));
+}
+function renderForm(){
+  const d = draft[cur];
+  $('form').innerHTML = `
+    <div class="two">
+      <div class="field"><label for="f-name">Character name</label>
+        <input class="in" id="f-name" value="${esc(d.name)}" maxlength="20">
+        <small>Used in the questions, like “How is Eric feeling?”</small></div>
+      <div class="field"><span class="lab">How is ${esc(d.name||'he/she')} feeling?</span>
+        <div class="chips" id="f-feel">${Object.keys(FEELINGS).map(f=>`<button type="button" class="fchip" data-f="${f}" aria-pressed="${d.feeling===f}">${FEELINGS[f]} ${f}</button>`).join('')}</div></div>
+    </div>
+    <div class="field"><label for="f-text">Story text</label>
+      <textarea class="in" id="f-text" maxlength="400">${esc(d.text)}</textarea></div>
+    <div class="field"><label for="f-why">Why? (correct reason)</label>
+      <div class="pre"><span>Because</span><input class="in" id="f-why" value="${esc(strip(d.why))}" maxlength="120"></div></div>
+    <div class="two">
+      <div class="field"><label for="f-w0">Wrong reason 1</label>
+        <div class="pre"><span>Because</span><input class="in" id="f-w0" value="${esc(strip(d.wrong[0]))}" maxlength="120"></div></div>
+      <div class="field"><label for="f-w1">Wrong reason 2</label>
+        <div class="pre"><span>Because</span><input class="in" id="f-w1" value="${esc(strip(d.wrong[1]))}" maxlength="120"></div></div>
+    </div>
+    <div class="field"><label for="f-video">Video link</label>
+      <input class="in" id="f-video" value="${esc(d.video)}" placeholder="YouTube or Google Drive link">
+      <div class="vstat" id="f-stat"></div>
+      <small>Paste a YouTube or Google Drive link. Drive files must be shared as “Anyone with the link”. A file path such as assets/dog.mp4 also works.</small></div>`;
+  const on = (id,fn)=>$(id).addEventListener('input',e=>{fn(e.target.value); e.target.classList.remove('bad');});
+  on('f-name',v=>{d.name=v; renderTabs();});
+  on('f-text',v=>d.text=v);
+  on('f-why',v=>d.why='Because '+v);
+  on('f-w0',v=>d.wrong[0]='Because '+v);
+  on('f-w1',v=>d.wrong[1]='Because '+v);
+  on('f-video',v=>{d.video=v; videoStatus();});
+  $('f-feel').querySelectorAll('.fchip').forEach(b=>b.addEventListener('click',()=>{
+    d.feeling=b.dataset.f;
+    $('f-feel').querySelectorAll('.fchip').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  }));
+  videoStatus();
+}
+function videoStatus(){
+  const s=$('f-stat'), v=draft[cur].video.trim();
+  if (!v){ s.textContent=''; s.className='vstat'; return; }
+  const p=parseVideo(v);
+  s.className='vstat '+(p?'ok':'no');
+  s.textContent = p ? `✓ ${p.type} link recognised` : 'This does not look like a YouTube, Google Drive or video file link.';
+}
+function openEditor(){
+  draft = clone(STORIES); cur = 0; bad = new Set();
+  $('edMsg').textContent='';
+  renderTabs(); renderForm(); ed.showModal();
+}
+function validate(){
+  bad = new Set(); let first = null;
+  draft.forEach((d,i)=>{
+    const rest = [d.name, d.text, strip(d.why), strip(d.wrong[0]), strip(d.wrong[1])];
+    if (rest.some(x=>!x.trim()) || !parseVideo(d.video)) { bad.add(i); if(first===null) first=i; }
+  });
+  return first;
+}
+$('edSave').addEventListener('click',()=>{
+  const first = validate();
+  if (first!==null){
+    cur = first; renderTabs(); renderForm();
+    const d = draft[cur];
+    [['f-name',d.name],['f-text',d.text],['f-why',strip(d.why)],['f-w0',strip(d.wrong[0])],['f-w1',strip(d.wrong[1])]].forEach(([id,v])=>{ if(!v.trim()) $(id).classList.add('bad'); });
+    if (!parseVideo(d.video)) $('f-video').classList.add('bad');
+    $('edMsg').textContent = `Situation ${first+1} needs attention. Fill in every field and use a valid video link.`;
+    return;
+  }
+  STORIES = draft.map(d=>({
+    name:d.name.trim(), text:d.text.trim(), feeling:d.feeling, video:d.video.trim(),
+    why:'Because '+strip(d.why).trim(), wrong:d.wrong.map(w=>'Because '+strip(w).trim())
+  }));
+  saveStories(); ed.close();
+});
+$('edReset').addEventListener('click',()=>{
+  if (!confirm('Reset all situations to the original ones?')) return;
+  draft = clone(DEFAULTS); bad = new Set(); $('edMsg').textContent=''; renderTabs(); renderForm();
+});
+$('edCancel').addEventListener('click',()=>ed.close());
+$('edClose').addEventListener('click',()=>ed.close());
+$('editBtn').addEventListener('click',openEditor);
+</script>
+</body>
+</html>
